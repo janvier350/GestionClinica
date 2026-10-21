@@ -346,6 +346,11 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                     <i class="metismenu-icon bi bi-shield-lock"></i> <?php te('menu.userPermissions'); ?>
                 </a>
             </li>
+            <li>
+                <a href="zona_horaria.php" class="<?php echo menuActivo('zona_horaria.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-clock-history"></i> <?php echo (current_lang()==='en'?'Time zone':'Zona horaria'); ?>
+                </a>
+            </li>
             <?php endif; ?>
             <?php endif; ?>
 

@@ -16,12 +16,20 @@ function conectarse()
     mysqli_select_db($link, $db_nombre) or die("Error seleccionando la base de datos.");
     mysqli_set_charset($link, 'utf8mb4');   // ← línea correcta, procedural
 
-    // Zona horaria única de la aplicación (hora de la clínica). Se usa la misma
-    // en PHP y en MySQL para que las horas (bitácora, "creado el", etc.) sean
-    // consistentes sin importar la zona del servidor de hosting.
-    // NOTA: si la clínica opera en otra zona, cambiar sólo esta constante
-    // (p. ej. 'America/Los_Angeles' para la costa oeste, 'America/Chicago' centro).
-    if (!defined('APP_TZ')) define('APP_TZ', 'America/New_York');
+    // Zona horaria de la aplicación — configurable por base de datos desde la
+    // página "Zona horaria" (tabla app_config, clave 'timezone'). Se usa la
+    // misma en PHP y en MySQL para que las horas (bitácora, "creado el", etc.)
+    // sean consistentes sin importar la zona del servidor de hosting.
+    // Por defecto Nueva York (Este). Cada instalación/BD tiene su propio valor.
+    if (!defined('APP_TZ')) {
+        $tzApp = 'America/New_York';
+        $rz = @mysqli_query($link, "SELECT valor FROM app_config WHERE clave='timezone' LIMIT 1");
+        if ($rz && ($rowz = mysqli_fetch_assoc($rz))) {
+            $vz = trim((string)($rowz['valor'] ?? ''));
+            if ($vz !== '') $tzApp = $vz;
+        }
+        define('APP_TZ', $tzApp);
+    }
     @date_default_timezone_set(APP_TZ);
     try {
         // Offset actual con horario de verano correcto (p. ej. -04:00 / -05:00).
