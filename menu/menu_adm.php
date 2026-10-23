@@ -136,6 +136,13 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </a>
             </li>
             <?php endif; ?>
+            <?php if (puede('sueros.aplicar')): ?>
+            <li>
+                <a href="sueros.php" class="<?php echo menuActivo('sueros.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-droplet-half"></i> <?php echo (current_lang()==='en'?'IV therapy':'Sueros'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (puede('agenda.atendidas')): ?>
             <li>
                 <a href="historial_atenciones.php" class="<?php echo menuActivo('historial_atenciones.php', $paginaActual); ?>">

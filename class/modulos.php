@@ -57,7 +57,6 @@ function modulos_catalogo() {
             'Internal support module.',
             true, true, ['panel.tickets']],
         // Fase 2: triaje (apagado por defecto; se activa por instalación)
-        // Reservado para la siguiente fase:
         'triaje' => ['Triaje', 'Triage',
             'Estación de signos vitales y motivo ligados a la cita (con o sin cita previa).',
             'Vital signs and reason-for-visit station linked to the appointment (walk-ins included).',
@@ -65,7 +64,7 @@ function modulos_catalogo() {
         'derivacion' => ['Derivación entre profesionales / sueros', 'Referrals / IV therapy',
             'Derivar al terminar la consulta a otro profesional o a colocación de sueros.',
             'Refer at the end of a visit to another professional or IV therapy.',
-            false, false, []],
+            false, true, ['derivar.crear','sueros.aplicar']],
     ];
 }
 

@@ -169,6 +169,7 @@ return array(
     'estado.Pendiente'         => 'Pendiente',
     'estado.Confirmada'        => 'Confirmada',
     'estado.Triada'            => 'Triada (lista para atender)',
+    'estado.Derivada'          => 'Derivada',
     'estado.Cancelada'         => 'Cancelada',
     'estado.Cancelado'         => 'Cancelado',
     'estado.Atendida'          => 'Atendida',

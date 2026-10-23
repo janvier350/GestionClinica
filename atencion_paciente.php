@@ -80,6 +80,31 @@ require_once(__DIR__ . '/class/permisos.php');
 require_once(__DIR__ . '/class/triaje.php');
 $triajeCita = modulo_activo('triaje') ? triaje_obtener($conexion, $idCitaInt) : null;
 
+// Derivación: la recibida (esta cita es el destino) y las emitidas desde esta cita
+require_once(__DIR__ . '/class/derivacion.php');
+$derRecibida = null; $derEmitidas = []; $doctoresDerivar = [];
+$modDeriva = modulo_activo('derivacion');
+if ($modDeriva) {
+    derivacion_asegurar_tablas($conexion);
+    $qd = $conexion->query("SELECT D.MOTIVO, D.FECHA_CREACION, D.IDCITA_ORIGEN, CONCAT(U.NOMBRES,' ',U.APELLIDOS) AS DERIVA, H.CONTENIDO_INFORME
+                              FROM derivacion D
+                              LEFT JOIN ADM_USUARIO U ON U.IDADM_USUARIO = D.IDUSUARIO_ORIGEN
+                              LEFT JOIN AG_HISTORIAL H ON H.IDCITA = D.IDCITA_ORIGEN
+                             WHERE D.IDCITA_DESTINO = $idCitaInt LIMIT 1");
+    if ($qd) $derRecibida = $qd->fetch_assoc() ?: null;
+    $qe = $conexion->query("SELECT D.IDDERIVACION, D.TIPO, D.ESTADO, D.MOTIVO, D.FECHA_CREACION, CONCAT(U.NOMBRES,' ',U.APELLIDOS) AS DESTINO,
+                                   (SELECT GROUP_CONCAT(CONCAT(S.PRODUCTO, ' (', S.ESTADO, ')') SEPARATOR ', ') FROM suero_orden S WHERE S.IDDERIVACION = D.IDDERIVACION) AS SUEROS
+                              FROM derivacion D LEFT JOIN ADM_USUARIO U ON U.IDADM_USUARIO = D.IDUSUARIO_DESTINO
+                             WHERE D.IDCITA_ORIGEN = $idCitaInt ORDER BY D.IDDERIVACION");
+    if ($qe) while ($x = $qe->fetch_assoc()) $derEmitidas[] = $x;
+    if (puede('derivar.crear')) {
+        $qdd = $conexion->query("SELECT U.IDADM_USUARIO id, CONCAT(U.NOMBRES,' ',U.APELLIDOS) nombre FROM ADM_USUARIO U
+                                  INNER JOIN ADM_ROL R ON R.IDADM_ROL = U.IDADM_ROL
+                                  WHERE R.CARGO='DOCTOR' AND U.ESTADO='A' AND U.IDADM_USUARIO <> ".(int)$d['IDDOCTOR']." ORDER BY U.NOMBRES");
+        if ($qdd) while ($x = $qdd->fetch_assoc()) $doctoresDerivar[] = $x;
+    }
+}
+
 // Nota ya guardada para esta misma cita (permite reabrir/editar una atención)
 $informeActual = '';
 if ($sa = $conexion->prepare("SELECT CONTENIDO_INFORME FROM AG_HISTORIAL WHERE IDCITA=? LIMIT 1")) {
@@ -363,6 +388,11 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
             </div>
         </div>
         <div class="page-title-actions">
+            <?php if ($modDeriva && puede('derivar.crear')): ?>
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalDerivar">
+                <i class="bi bi-arrow-right-circle me-1"></i><?php echo current_lang()==='en' ? 'Refer' : 'Derivar'; ?>
+            </button>
+            <?php endif; ?>
             <button type="button" class="btn btn-outline-info btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalAyudaAtencion">
                 <i class="bi bi-question-circle me-1"></i><?php te('help.howItWorks'); ?>
             </button>
@@ -373,6 +403,34 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
     </div>
 </div>
 
+<?php if ($derRecibida): $enD = (current_lang() === 'en'); ?>
+<div class="main-card mb-3 card border-primary">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="fw-semibold"><i class="bi bi-arrow-right-circle text-primary me-1"></i><?php echo $enD ? 'Referred by' : 'Derivado por'; ?> <?php echo h($derRecibida['DERIVA']); ?>
+                <span class="small text-muted ms-2"><?php echo h(date('m/d/Y H:i', strtotime($derRecibida['FECHA_CREACION']))); ?></span></div>
+            <?php if (trim((string)$derRecibida['CONTENIDO_INFORME']) !== ''): ?>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalNotaOrigen"><i class="bi bi-journal-text"></i> <?php echo $enD ? "View referring doctor's note" : 'Ver nota del profesional que deriva'; ?></button>
+            <?php endif; ?>
+        </div>
+        <div class="mt-1"><span class="text-muted small"><?php echo $enD ? 'Reason' : 'Motivo'; ?>:</span> <?php echo nl2br(h($derRecibida['MOTIVO'])); ?></div>
+    </div>
+</div>
+<div class="modal fade" id="modalNotaOrigen" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><?php echo $enD ? 'Referring note (read-only)' : 'Nota de origen (solo lectura)'; ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-0"><iframe sandbox="" style="width:100%;height:70vh;border:0;" srcdoc="<?php echo h('<base target="_blank"><body style="font-family:sans-serif;padding:12px">'.$derRecibida['CONTENIDO_INFORME'].'</body>'); ?>"></iframe></div>
+</div></div></div>
+<?php endif; ?>
+<?php if ($derEmitidas): $enD = (current_lang() === 'en'); ?>
+<div class="main-card mb-3 card border-secondary"><div class="card-body py-2 small">
+    <div class="fw-semibold mb-1"><i class="bi bi-diagram-3 me-1"></i><?php echo $enD ? 'Referrals from this visit' : 'Derivaciones de esta consulta'; ?></div>
+    <?php foreach ($derEmitidas as $de): ?>
+    <div><span class="badge bg-<?php echo $de['ESTADO']==='Atendida'?'success':'warning text-dark'; ?>"><?php echo h($de['ESTADO']); ?></span>
+        <?php echo $de['TIPO']==='SUERO' ? ($enD?'IV therapy':'Sueros').': '.h($de['SUEROS']) : ($enD?'To':'A').' '.h($de['DESTINO']); ?>
+        <span class="text-muted">— <?php echo h($de['MOTIVO']); ?></span></div>
+    <?php endforeach; ?>
+</div></div>
+<?php endif; ?>
 <?php if ($triajeCita): $tj = $triajeCita; $enT = (current_lang() === 'en');
       $fmt = function($v){ if ($v === null) return '—'; $v = (string)$v; return strpos($v, '.') !== false ? rtrim(rtrim($v, '0'), '.') : $v; }; ?>
 <div class="main-card mb-3 card border-info">
@@ -1889,6 +1947,69 @@ function detenerDictado() {
     </div>
 </div>
 
+<?php if ($modDeriva && puede('derivar.crear')): $enM = (current_lang() === 'en'); ?>
+<div class="modal fade" id="modalDerivar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-right-circle me-1"></i><?php echo $enM ? 'Refer patient' : 'Derivar paciente'; ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+        <div class="btn-group w-100 mb-3" role="group">
+            <input type="radio" class="btn-check" name="derTipo" id="derTipoP" value="PROFESIONAL" checked>
+            <label class="btn btn-outline-primary" for="derTipoP"><i class="bi bi-person-badge"></i> <?php echo $enM ? 'Another professional' : 'Otro profesional'; ?></label>
+            <input type="radio" class="btn-check" name="derTipo" id="derTipoS" value="SUERO">
+            <label class="btn btn-outline-primary" for="derTipoS"><i class="bi bi-droplet-half"></i> <?php echo $enM ? 'IV therapy' : 'Colocación de sueros'; ?></label>
+        </div>
+        <div id="derBloqueP" class="mb-3">
+            <label class="form-label"><?php echo $enM ? 'Professional' : 'Profesional'; ?></label>
+            <select id="derDoctor" class="form-select"><option value=""><?php echo $enM ? 'Select…' : 'Seleccionar…'; ?></option>
+                <?php foreach ($doctoresDerivar as $dd): ?><option value="<?php echo (int)$dd['id']; ?>"><?php echo h($dd['nombre']); ?></option><?php endforeach; ?></select>
+            <div class="form-text"><?php echo $enM ? 'An appointment for today is created for them, with the shared medical history.' : 'Se crea una cita de hoy para el profesional, con la historia clínica compartida.'; ?></div>
+        </div>
+        <div id="derBloqueS" class="mb-3" style="display:none;">
+            <label class="form-label"><?php echo $enM ? 'Orders' : 'Órdenes de suero'; ?></label>
+            <div id="derItems"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="derAddItem"><i class="bi bi-plus"></i> <?php echo $enM ? 'Add order' : 'Agregar orden'; ?></button>
+        </div>
+        <label class="form-label"><?php echo $enM ? 'Reason / notes' : 'Motivo / indicaciones'; ?></label>
+        <textarea id="derMotivo" class="form-control" rows="3"></textarea>
+        <div id="derError" class="text-danger small mt-2"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo $enM ? 'Cancel' : 'Cancelar'; ?></button>
+        <button type="button" class="btn btn-primary" id="derEnviar"><i class="bi bi-send"></i> <?php echo $enM ? 'Refer' : 'Derivar'; ?></button></div>
+</div></div></div>
+<script>
+(function(){
+    var en = <?php echo json_encode($enM); ?>, idCita = <?php echo (int)$idCitaInt; ?>;
+    var items = document.getElementById('derItems');
+    var errores = {MOTIVO_REQUERIDO: en?'Enter the reason.':'Escribe el motivo.', PROFESIONAL_REQUERIDO: en?'Select the professional.':'Selecciona el profesional.',
+        SUERO_REQUERIDO: en?'Add at least one order.':'Agrega al menos una orden.', SIN_PERMISO: en?'No permission.':'Sin permiso.', MISMO_PROFESIONAL: en?'Choose a different professional.':'Elige otro profesional.'};
+    function addItem(){
+        var d = document.createElement('div'); d.className = 'row g-2 mb-2 der-item';
+        d.innerHTML = '<div class="col-md-4"><input class="form-control form-control-sm" data-k="producto" placeholder="'+(en?'IV product':'Suero / producto')+'"></div>'
+            + '<div class="col-md-3"><input class="form-control form-control-sm" data-k="dosis" placeholder="'+(en?'Dose':'Dosis')+'"></div>'
+            + '<div class="col-md-2"><input class="form-control form-control-sm" data-k="via" placeholder="'+(en?'Route':'Vía')+'"></div>'
+            + '<div class="col-md-3"><input class="form-control form-control-sm" data-k="indicaciones" placeholder="'+(en?'Instructions':'Indicaciones')+'"></div>';
+        items.appendChild(d);
+    }
+    document.getElementById('derAddItem').onclick = addItem; addItem();
+    function tipo(){ return document.querySelector('input[name="derTipo"]:checked').value; }
+    function toggle(){ var s = tipo()==='SUERO'; document.getElementById('derBloqueP').style.display = s?'none':''; document.getElementById('derBloqueS').style.display = s?'':'none'; }
+    document.querySelectorAll('input[name="derTipo"]').forEach(function(r){ r.onchange = toggle; });
+    document.getElementById('derEnviar').onclick = function(){
+        var fd = new FormData(); fd.append('idCita', idCita); fd.append('tipo', tipo());
+        fd.append('motivo', document.getElementById('derMotivo').value);
+        fd.append('idDoctorDestino', document.getElementById('derDoctor').value);
+        items.querySelectorAll('.der-item').forEach(function(row, i){
+            row.querySelectorAll('input').forEach(function(inp){ fd.append('items['+i+']['+inp.dataset.k+']', inp.value); });
+        });
+        var btn = this; btn.disabled = true;
+        fetch('derivar_guardar.php', {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+            btn.disabled = false;
+            if (j.ok) { location.reload(); }
+            else { document.getElementById('derError').textContent = errores[j.error] || ((en?'Could not refer: ':'No se pudo derivar: ') + j.error); }
+        }).catch(function(){ btn.disabled = false; document.getElementById('derError').textContent = en?'Connection error.':'Error de conexión.'; });
+    };
+})();
+</script>
+<?php endif; ?>
 <?php if ($triajeCita): ?>
 <script>
 // Precarga peso/talla del triaje (en kg/cm) si la atención aún no los tiene

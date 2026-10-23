@@ -169,6 +169,7 @@ return array(
     'estado.Pendiente'         => 'Pending',
     'estado.Confirmada'        => 'Confirmed',
     'estado.Triada'            => 'Triaged (ready to see)',
+    'estado.Derivada'          => 'Referred',
     'estado.Cancelada'         => 'Cancelled',
     'estado.Cancelado'         => 'Cancelled',
     'estado.Atendida'          => 'Attended',
