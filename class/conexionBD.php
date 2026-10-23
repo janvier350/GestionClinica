@@ -8,9 +8,9 @@ function conectarse()
     if (function_exists('mysqli_report')) { mysqli_report(MYSQLI_REPORT_OFF); }
 
     $db_host   = "localhost";
-    $db_nombre = "srossnut_agenda";
-    $db_user   = "srossnut_agenda";
-    $db_pass   = "nAGTDbMpym6nNv9aedHJ";
+    $db_nombre = "overcloc_GestionClinica";
+    $db_user   = "overcloc_GestionClinica";
+    $db_pass   = "AJ,V}-UgYkea@q}I";
 
     $link = mysqli_connect($db_host, $db_user, $db_pass);
     mysqli_select_db($link, $db_nombre) or die("Error seleccionando la base de datos.");
