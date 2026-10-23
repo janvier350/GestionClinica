@@ -80,6 +80,18 @@ require_once(__DIR__ . '/class/permisos.php');
 require_once(__DIR__ . '/class/triaje.php');
 $triajeCita = modulo_activo('triaje') ? triaje_obtener($conexion, $idCitaInt) : null;
 
+// Registro de atención (formato de la hoja física de la clínica); convive con la nota libre
+require_once(__DIR__ . '/class/registro_atencion.php');
+$modRegistro = modulo_activo('registro_atencion');
+$puedeRegistro = $modRegistro && puede('atencion.registro');
+$verHoja = $modRegistro && puede('atencion.ver_registro');
+$registro = ['reg' => null, 'items' => []];
+if ($puedeRegistro) { registro_asegurar_tablas($conexion); $registro = registro_obtener($conexion, $idCitaInt); }
+$rgServicio = $registro['reg']['SERVICIO'] ?? ($d['TIPO_CONSULTA'] ?? '');
+$rgFecha    = $registro['reg']['FECHA']    ?? ($d['FECHA_CITA'] ?? date('Y-m-d'));
+$rgTratante = $registro['reg']['TRATANTE'] ?? trim(($d['DOC_NOMBRES'] ?? '').' '.($d['DOC_APELLIDOS'] ?? ''));
+$rgItems    = $registro['items'] ?: [['INDICACION'=>'','CANTIDAD'=>'','RECOMENDACION'=>'']];
+
 // Derivación: la recibida (esta cita es el destino) y las emitidas desde esta cita
 require_once(__DIR__ . '/class/derivacion.php');
 $derRecibida = null; $derEmitidas = []; $doctoresDerivar = [];
@@ -450,6 +462,42 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
             <div class="col-6 col-md-1"><span class="text-muted">Gluc.</span><br><b><?php echo h($fmt($tj['GLUCOSA'])); ?></b></div>
         </div>
         <?php if (trim((string)$tj['MOTIVO']) !== ''): ?><div class="mt-2"><span class="text-muted small"><?php echo $enT ? 'Reason for visit' : 'Motivo de consulta'; ?>:</span> <?php echo nl2br(h($tj['MOTIVO'])); ?></div><?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if ($puedeRegistro): $enR = (current_lang() === 'en'); ?>
+<div class="main-card mb-3 card border-success" id="cardRegistro">
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+            <div class="fw-semibold"><i class="bi bi-clipboard2-check text-success me-1"></i><?php echo $enR ? 'Visit record (clinic format)' : 'Registro de atención (formato clínica)'; ?>
+                <?php if ($registro['reg']): ?><span class="badge bg-success ms-1"><?php echo $enR ? 'Saved' : 'Guardado'; ?></span><?php endif; ?></div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="rgInsertarEnNota()"><i class="bi bi-box-arrow-in-down"></i> <?php echo $enR ? 'Insert into note' : 'Insertar en la nota'; ?></button>
+                <?php if ($verHoja): ?><a class="btn btn-sm btn-outline-secondary" target="_blank" href="registro_paciente.php?idPaciente=<?php echo (int)$idPacienteA; ?>"><i class="bi bi-printer"></i> <?php echo $enR ? 'Patient sheet' : 'Hoja del paciente'; ?></a><?php endif; ?>
+            </div>
+        </div>
+        <div class="row g-2 mb-2">
+            <div class="col-md-5"><label class="form-label small mb-0"><?php echo $enR ? 'Service' : 'Servicio'; ?></label><input id="rgServicio" class="form-control form-control-sm" maxlength="150" value="<?php echo h($rgServicio); ?>"></div>
+            <div class="col-md-3"><label class="form-label small mb-0"><?php echo $enR ? 'Date' : 'Fecha'; ?></label><input type="date" id="rgFecha" class="form-control form-control-sm" value="<?php echo h($rgFecha); ?>"></div>
+            <div class="col-md-4"><label class="form-label small mb-0"><?php echo $enR ? 'Provider' : 'Tratante'; ?></label><input id="rgTratante" class="form-control form-control-sm" maxlength="150" value="<?php echo h($rgTratante); ?>"></div>
+        </div>
+        <div class="row g-2 small text-muted d-none d-md-flex"><div class="col-md-5"><?php echo $enR ? 'Instructions' : 'Indicaciones'; ?></div><div class="col-md-2"><?php echo $enR ? 'Quantity' : 'Cantidad'; ?></div><div class="col-md-4"><?php echo $enR ? 'Recommendations' : 'Recomendaciones'; ?></div></div>
+        <div id="rgFilas">
+        <?php foreach ($rgItems as $it): ?>
+            <div class="row g-2 mb-2 rg-fila">
+                <div class="col-md-5"><textarea class="form-control form-control-sm" rows="2" data-k="indicacion"><?php echo h($it['INDICACION']); ?></textarea></div>
+                <div class="col-6 col-md-2"><input class="form-control form-control-sm" maxlength="60" data-k="cantidad" value="<?php echo h($it['CANTIDAD']); ?>"></div>
+                <div class="col-6 col-md-4"><textarea class="form-control form-control-sm" rows="2" data-k="recomendacion"><?php echo h($it['RECOMENDACION']); ?></textarea></div>
+                <div class="col-12 col-md-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger" onclick="rgQuitar(this)" title="<?php echo $enR ? 'Remove row' : 'Quitar fila'; ?>"><i class="bi bi-trash"></i></button></div>
+            </div>
+        <?php endforeach; ?>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="rgAgregar()"><i class="bi bi-plus"></i> <?php echo $enR ? 'Add row' : 'Agregar fila'; ?></button>
+            <button type="button" class="btn btn-sm btn-success" id="rgGuardar" onclick="rgGuardar()"><i class="bi bi-save"></i> <?php echo $enR ? 'Save record' : 'Guardar registro'; ?></button>
+            <span id="rgMsg" class="small"></span>
+        </div>
     </div>
 </div>
 <?php endif; ?>
@@ -1947,6 +1995,50 @@ function detenerDictado() {
     </div>
 </div>
 
+<?php if ($puedeRegistro): ?>
+<script>
+(function(){
+    var en = <?php echo json_encode($enR); ?>, idCita = <?php echo (int)$idCitaInt; ?>;
+    function filas(){ return Array.prototype.slice.call(document.querySelectorAll('#rgFilas .rg-fila')); }
+    function val(f, k){ var e = f.querySelector('[data-k="'+k+'"]'); return e ? e.value : ''; }
+    window.rgAgregar = function(){
+        var base = document.querySelector('#rgFilas .rg-fila'); if (!base) return;
+        var n = base.cloneNode(true); n.querySelectorAll('textarea,input').forEach(function(e){ e.value = ''; });
+        document.getElementById('rgFilas').appendChild(n);
+    };
+    window.rgQuitar = function(btn){
+        var f = btn.closest('.rg-fila');
+        if (filas().length > 1) f.remove(); else f.querySelectorAll('textarea,input').forEach(function(e){ e.value = ''; });
+    };
+    function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML.replace(/\n/g,'<br>'); }
+    window.rgGuardar = function(){
+        var fd = new FormData(); fd.append('idCita', idCita);
+        fd.append('servicio', document.getElementById('rgServicio').value); fd.append('fecha', document.getElementById('rgFecha').value);
+        fd.append('tratante', document.getElementById('rgTratante').value);
+        filas().forEach(function(f, i){ ['indicacion','cantidad','recomendacion'].forEach(function(k){ fd.append('items['+i+']['+k+']', val(f,k)); }); });
+        var m = document.getElementById('rgMsg'), b = document.getElementById('rgGuardar'); b.disabled = true; m.className = 'small text-muted'; m.textContent = '…';
+        fetch('registro_atencion_guardar.php', {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+            b.disabled = false;
+            if (j.ok) { m.className = 'small text-success'; m.textContent = en ? 'Saved.' : 'Registro guardado.'; }
+            else { m.className = 'small text-danger'; m.textContent = (en ? 'Could not save: ' : 'No se pudo guardar: ') + (j.error || ''); }
+        }).catch(function(){ b.disabled = false; m.className = 'small text-danger'; m.textContent = en ? 'Connection error.' : 'Error de conexión.'; });
+    };
+    window.rgInsertarEnNota = function(){
+        var rows = '';
+        filas().forEach(function(f){
+            var a = val(f,'indicacion'), c = val(f,'cantidad'), r = val(f,'recomendacion');
+            if (!a && !c && !r) return;
+            rows += '<tr><td style="border:1px solid #999;padding:4px;vertical-align:top;">'+esc(a)+'</td><td style="border:1px solid #999;padding:4px;vertical-align:top;">'+esc(c)+'</td><td style="border:1px solid #999;padding:4px;vertical-align:top;">'+esc(r)+'</td></tr>';
+        });
+        if (!rows) { alert(en ? 'There are no rows to insert.' : 'No hay filas para insertar.'); return; }
+        var html = '<p><b>'+(en?'Service':'Servicio')+':</b> '+esc(document.getElementById('rgServicio').value)+' &nbsp; <b>'+(en?'Date':'Fecha')+':</b> '+esc(document.getElementById('rgFecha').value)+' &nbsp; <b>'+(en?'Provider':'Tratante')+':</b> '+esc(document.getElementById('rgTratante').value)+'</p>'
+            + '<table style="border-collapse:collapse;width:100%;"><thead><tr><th style="border:1px solid #999;padding:4px;">'+(en?'Instructions':'Indicaciones')+'</th><th style="border:1px solid #999;padding:4px;width:90px;">'+(en?'Quantity':'Cantidad')+'</th><th style="border:1px solid #999;padding:4px;">'+(en?'Recommendations':'Recomendaciones')+'</th></tr></thead><tbody>'+rows+'</tbody></table><p><br></p>';
+        var $ed = $('#editorInforme');
+        try { $ed.summernote('code', ($ed.summernote('code') || '') + html); } catch(e) { try { $ed.summernote('pasteHTML', html); } catch(e2) {} }
+    };
+})();
+</script>
+<?php endif; ?>
 <?php if ($modDeriva && puede('derivar.crear')): $enM = (current_lang() === 'en'); ?>
 <div class="modal fade" id="modalDerivar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-right-circle me-1"></i><?php echo $enM ? 'Refer patient' : 'Derivar paciente'; ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>

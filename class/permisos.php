@@ -29,6 +29,9 @@ function permisos_catalogo() {
         'agenda.revision'      => ['Revisión de citas por fecha',    'Agenda',        ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
         // Triaje
         'triaje.registrar'     => ['Triaje (registrar signos vitales)', 'Triaje',    ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>1]],
+        // Registro de atención (formato clínica)
+        'atencion.registro'    => ['Registro de atención (editar)',  'Atención', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>0,'ENFERMERA'=>0]],
+        'atencion.ver_registro'=> ['Hoja del paciente (ver / imprimir)', 'Atención', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>1]],
         // Derivación / sueros
         'derivar.crear'        => ['Derivar paciente (profesional / sueros)', 'Derivación', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>0,'ENFERMERA'=>0]],
         'sueros.aplicar'       => ['Sueros: ver cola y registrar aplicación',  'Derivación', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0,'ENFERMERA'=>1]],
