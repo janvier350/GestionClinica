@@ -1,0 +1,13 @@
+---
+# Despliegue desde cPanel (Git Version Control → Deploy HEAD Commit).
+# El repo vive FUERA de public_html (/home/overcloc/GestionClinica) y solo se
+# publica el código en DEPLOYPATH. Ajusta DEPLOYPATH a la carpeta web de L'CHAIN.
+# No se tocan config.local.php ni los adjuntos/documentos subidos por la clínica.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/overcloc/public_html/lchain/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /usr/bin/rsync -rlptD --exclude='.git' --exclude='.github' --exclude='.cpanel.yml' --exclude='config.local.php' --exclude='error_log' --exclude='documentos_pacientes/*' --exclude='tickets_adjuntos/*' --exclude='__MACOSX' --exclude='*.zip' ./ $DEPLOYPATH
+    - /bin/mkdir -p $DEPLOYPATH/documentos_pacientes $DEPLOYPATH/tickets_adjuntos
+    - /bin/cp -n documentos_pacientes/.htaccess documentos_pacientes/index.php $DEPLOYPATH/documentos_pacientes/
+    - /bin/cp -n tickets_adjuntos/.htaccess tickets_adjuntos/index.php $DEPLOYPATH/tickets_adjuntos/

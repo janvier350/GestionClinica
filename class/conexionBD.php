@@ -7,10 +7,23 @@ function conectarse()
     // cualquier error de consulta en un HTTP 500. Restauramos el modo clásico.
     if (function_exists('mysqli_report')) { mysqli_report(MYSQLI_REPORT_OFF); }
 
+    // Credenciales: cada instalación define las suyas en config.local.php (en la
+    // raíz, fuera del control de versiones; ver config.local.example.php).
+    // Si el archivo no existe se usan los valores históricos de esta instalación.
     $db_host   = "localhost";
     $db_nombre = "srossnut_agenda";
     $db_user   = "srossnut_agenda";
     $db_pass   = "nAGTDbMpym6nNv9aedHJ";
+    $cfgLocal  = __DIR__ . '/../config.local.php';
+    if (is_file($cfgLocal)) {
+        $cfg = include $cfgLocal;
+        if (is_array($cfg)) {
+            $db_host   = $cfg['db_host'] ?? $db_host;
+            $db_nombre = $cfg['db_name'] ?? $db_nombre;
+            $db_user   = $cfg['db_user'] ?? $db_user;
+            $db_pass   = $cfg['db_pass'] ?? $db_pass;
+        }
+    }
 
     $link = mysqli_connect($db_host, $db_user, $db_pass);
     mysqli_select_db($link, $db_nombre) or die("Error seleccionando la base de datos.");

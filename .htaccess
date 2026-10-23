@@ -74,3 +74,16 @@ Options -Indexes
 
 # Ocultar la firma del server (menos superficie).
 ServerSignature Off
+
+# --- 4) Archivos sensibles: sin acceso web -----------------------------------
+<FilesMatch "^(config\.local\.php|config\.local\.example\.php|\.cpanel\.yml|\.gitignore|error_log|.*\.zip|.*\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+# Carpetas ocultas (.git, etc.)
+RedirectMatch 404 /\.git

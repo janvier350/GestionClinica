@@ -1,2 +1,8 @@
 __MACOSX/
 .DS_Store
+
+# Configuración y datos propios de cada instalación (no versionar)
+config.local.php
+error_log
+**/error_log
+*.log
