@@ -79,6 +79,9 @@ if (!$updCita->execute()) {
 }
 $updCita->close();
 
+// Si esta cita era el destino de una derivación, la derivación queda atendida (tabla opcional)
+@$conexion->query("UPDATE derivacion SET ESTADO='Atendida' WHERE IDCITA_DESTINO = ".(int)$idCita." AND TIPO='PROFESIONAL'");
+
 auditar($conexion, 'Atención', 'atender', 'AG_CITA', $idCita, 'Guardó la nota de consulta y marcó la cita como Atendida.');
 
 $conexion->close();
