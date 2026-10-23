@@ -17,9 +17,10 @@ Lista viva para no perder temas acordados. (No se publica: `*.md` está excluido
 - [ ] Verificar que `documentos_pacientes/` responda *Forbidden* por URL directa.
 
 ## Contenido heredado de la clínica anterior (revisar con la clínica)
-- [ ] Plantillas de **documentos para firmar** (tabla `documentos`: textos HIPAA/SRoss) → reemplazar por las de L'Chaim o apagar el módulo.
+- [ ] Plantillas de **documentos para firmar** (tabla `documentos`: textos HIPAA/SRoss): ejecutar `revisar_marca.php` para ver dónde están y, si hace falta, desactivarlas;
+      crear las de L'Chaim con `migrar_documentos_lchaim.php` (textos base en español: **revisar con la clínica / asesor legal** antes de usarlos).
 - [ ] Catálogos heredados: tipos de consulta, *bill items*, seguros, plantillas de informe (nutrición). Desactivar lo que no aplique.
-- [ ] Textos «Sross Nutritions / SROSS» que queden en pantallas secundarias.
+- [ ] Textos «Sross Nutritions / SROSS» que queden en pantallas secundarias (`revisar_marca.php` los lista; la clínica los corrige a mano).
 
 ## Mejoras posibles
 - [ ] Logo horizontal (con texto) para la cabecera de la app; hoy se usa la ficha cuadrada.
@@ -27,3 +28,6 @@ Lista viva para no perder temas acordados. (No se publica: `*.md` está excluido
 - [ ] Fecha de nacimiento obligatoria al crear paciente rápido (triaje sin cita / historias escaneadas): evaluar hacerla opcional.
 - [ ] Resultados de exámenes con archivo adjunto (PDF) usando el módulo de documentos del paciente.
 - [ ] Respaldos: confirmar los respaldos de cPanel antes de prometerlos en la propuesta.
+
+## Despliegue
+- [x] `.cpanel.yml` publica en `/home/overcloc/public_html/GestionClinica/` (la URL actual del sitio). Si cambia la carpeta web, editar solo `DEPLOYPATH`.
