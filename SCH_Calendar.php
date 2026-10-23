@@ -166,19 +166,23 @@ while ($row = $resultado->fetch_assoc()) {
 }
 
 $tiposConsultaActivos = array();
-$resTipos = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, COLOR FROM AG_TIPOCONSULTA WHERE ESTADO = 'A' ORDER BY NOMBRES");
+// ROL_ATIENDE (quién atiende el servicio) existe solo si ya se abrió "Tipos de consulta"; tolerar su ausencia.
+$tieneRolAtiende = (int)$conexion->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_TIPOCONSULTA' AND COLUMN_NAME='ROL_ATIENDE'")->fetch_assoc()['c'] > 0;
+$resTipos = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, COLOR, " . ($tieneRolAtiende ? "ROL_ATIENDE" : "NULL AS ROL_ATIENDE") . " FROM AG_TIPOCONSULTA WHERE ESTADO = 'A' ORDER BY NOMBRES");
 while ($t = $resTipos->fetch_assoc()) {
     $tiposConsultaActivos[] = array(
         'id'     => $t['IDTIPOCONSULTA'],
         'nombre' => $t['NOMBRES'],
+        'rol'    => $t['ROL_ATIENDE'] ?? '',
         'color'  => !empty($t['COLOR']) ? $t['COLOR'] : $colorTipoDefault,
     );
 }
 
-$sqlDoctores = "SELECT U.IDADM_USUARIO, U.NOMBRES, U.APELLIDOS
+// Profesionales que atienden: doctores y enfermeras (p. ej. sueroterapia)
+$sqlDoctores = "SELECT U.IDADM_USUARIO, U.NOMBRES, U.APELLIDOS, R.CARGO AS ROL
                 FROM ADM_USUARIO U
                 INNER JOIN ADM_ROL R ON U.IDADM_ROL = R.IDADM_ROL
-                WHERE R.CARGO = 'DOCTOR'
+                WHERE R.CARGO IN ('DOCTOR','ENFERMERA')
                   AND U.ESTADO = 'A'
                 ORDER BY U.NOMBRES";
 $resultDoctores  = $conexion->query($sqlDoctores);
@@ -187,6 +191,7 @@ while ($d = $resultDoctores->fetch_assoc()) {
     $doctoresActivos[] = array(
         'id'     => $d['IDADM_USUARIO'],
         'nombre' => $d['NOMBRES'] . ' ' . $d['APELLIDOS'],
+        'rol'    => $d['ROL'],
     );
 }
 
@@ -652,10 +657,11 @@ if ((int)($conexion->query("SHOW TABLES LIKE 'ausencias_doctor'")->num_rows ?? 0
                         <select class="form-select select-busqueda" name="Idconsulta" required>
                             <option value=""><?php te('cal.searchType'); ?></option>
                             <?php
+                            $rolDe = array(); foreach ($tiposConsultaActivos as $tca) { $rolDe[$tca['id']] = $tca['rol']; }
                             $queryC = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES FROM AG_TIPOCONSULTA WHERE ESTADO = 'A' ORDER BY NOMBRES");
                             while ($v = $queryC->fetch_assoc()):
                             ?>
-                            <option value="<?php echo $v['IDTIPOCONSULTA']; ?>"><?php echo htmlspecialchars($v['NOMBRES']); ?></option>
+                            <option value="<?php echo $v['IDTIPOCONSULTA']; ?>" data-rol="<?php echo htmlspecialchars($rolDe[$v['IDTIPOCONSULTA']] ?? ''); ?>"><?php echo htmlspecialchars($v['NOMBRES']); ?></option>
                             <?php endwhile; ?>
                         </select>
                     </div>
@@ -664,7 +670,7 @@ if ((int)($conexion->query("SHOW TABLES LIKE 'ausencias_doctor'")->num_rows ?? 0
                         <select class="form-select select-busqueda" name="IdDoctor" required>
                             <option value=""><?php te('cal.searchDoctor'); ?></option>
                             <?php foreach ($doctoresActivos as $v): ?>
-                            <option value="<?php echo $v['id']; ?>"><?php echo htmlspecialchars($v['nombre']); ?></option>
+                            <option value="<?php echo $v['id']; ?>" data-rol="<?php echo htmlspecialchars($v['rol']); ?>"><?php echo htmlspecialchars($v['nombre']); ?><?php echo $v['rol'] === 'ENFERMERA' ? ' ('.(current_lang()==='en'?'nurse':'enfermera').')' : ''; ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -1701,6 +1707,23 @@ function ausenciaConflicto(idDoctor, fecha, hora){
     }
     return null;
 }
+// Al elegir un servicio que atiende un rol (p. ej. sueroterapia → enfermera), solo se habilitan esos profesionales.
+$(function(){
+    var $svc = $('#insertCita [name="Idconsulta"]'), $doc = $('#insertCita [name="IdDoctor"]');
+    if (!$svc.length || !$doc.length) return;
+    function filtrar(){
+        var rol = ($svc.find('option:selected').data('rol') || '').toString();
+        $doc.find('option').each(function(){
+            var r = ($(this).data('rol') || '').toString();
+            $(this).prop('disabled', !!rol && !!this.value && r !== rol);
+        });
+        var $sel = $doc.find('option:selected');
+        if ($sel.prop('disabled')) $doc.val('');
+        $doc.trigger('change.select2');
+    }
+    $svc.on('change', filtrar);
+});
+
 // Doctor con la sesión iniciada (si el usuario logueado es DOCTOR): su columna se muestra por defecto
 const loginDoctorId   = <?php echo json_encode((strtoupper($_SESSION['rol'] ?? '') === 'DOCTOR') ? (string)($_SESSION['iduser'] ?? '') : ''); ?>;
 

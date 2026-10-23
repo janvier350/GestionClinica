@@ -154,9 +154,9 @@ $tienePass = ($c['pass'] !== '');
                     <input class="form-check-input" type="checkbox" role="switch" name="enabled" id="enabled" <?php echo $c['enabled']==='1'?'checked':''; ?>>
                     <label class="form-check-label" for="enabled"><?php echo $en?'Send emails':'Enviar correos'; ?></label>
                 </div>
-                <div class="mb-3"><label class="form-label fw-semibold"><?php echo $en?'Clinic name in emails':'Nombre de la clínica en los correos'; ?></label>
-                    <input name="brand" class="form-control" maxlength="80" value="<?php echo h($c['brand']); ?>" placeholder="L'CHAIN">
-                    <div class="form-text"><?php echo $en?'Appears in the header, subject and footer.':'Aparece en el encabezado, el asunto y el pie.'; ?></div></div>
+                <div class="mb-3"><label class="form-label fw-semibold"><?php echo $en?'Clinic name (emails, login, documents)':'Nombre de la clínica (correos, login y documentos)'; ?></label>
+                    <input name="brand" class="form-control" maxlength="80" value="<?php echo h($c['brand']); ?>" placeholder="L'Chaim">
+                    <div class="form-text"><?php echo $en?'Appears in emails (header, subject, footer), the login page, page titles and the signing page.':'Aparece en los correos (encabezado, asunto y pie), el login, los títulos de página y la página de firma.'; ?></div></div>
                 <h6 class="mt-4"><?php echo $en?'Outgoing server (SMTP)':'Servidor de salida (SMTP)'; ?></h6>
                 <div class="row g-2 mb-2">
                     <div class="col-md-6"><label class="form-label"><?php echo $en?'Server':'Servidor'; ?></label><input name="host" class="form-control" value="<?php echo h($c['host']); ?>" placeholder="mail.midominio.com"></div>

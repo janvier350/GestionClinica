@@ -18,6 +18,9 @@ if (isset($_SESSION['expire']) && time() > $_SESSION['expire']) {
 require_once(__DIR__ . "/class/permisos.php");
 requerir('cfg.tiposconsulta');
 
+// Columna "Lo atiende" (rol que atiende el servicio: DOCTOR / ENFERMERA / cualquiera). Self-healing.
+$rcol = @$conexion->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_TIPOCONSULTA' AND COLUMN_NAME='ROL_ATIENDE'");
+if ($rcol && (int)$rcol->fetch_assoc()['c'] === 0) { @$conexion->query("ALTER TABLE AG_TIPOCONSULTA ADD COLUMN ROL_ATIENDE VARCHAR(20) NULL"); }
 $colorDefault = '#3788d8';
 $mensaje = null;
 
@@ -29,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nombres     = trim($_POST['nombres'] ?? '');
         $abreviatura = trim($_POST['abreviatura'] ?? '');
         $color       = trim($_POST['color'] ?? $colorDefault);
+        $rolAtiende  = in_array($_POST['rol_atiende'] ?? '', ['DOCTOR','ENFERMERA'], true) ? $_POST['rol_atiende'] : '';
 
         if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
             $color = $colorDefault;
@@ -38,17 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mensaje = ['err', t('tc.msg.nameRequired')];
         } elseif ($id > 0) {
             $stmt = $conexion->prepare(
-                "UPDATE AG_TIPOCONSULTA SET NOMBRES = ?, ABREVIATURA = ?, COLOR = ? WHERE IDTIPOCONSULTA = ?"
+                "UPDATE AG_TIPOCONSULTA SET NOMBRES = ?, ABREVIATURA = ?, COLOR = ?, ROL_ATIENDE = NULLIF(?, '') WHERE IDTIPOCONSULTA = ?"
             );
-            $stmt->bind_param("sssi", $nombres, $abreviatura, $color, $id);
+            $stmt->bind_param("ssssi", $nombres, $abreviatura, $color, $rolAtiende, $id);
             $stmt->execute();
             $stmt->close();
             $mensaje = ['ok', t('tc.msg.updated')];
         } else {
             $stmt = $conexion->prepare(
-                "INSERT INTO AG_TIPOCONSULTA (NOMBRES, ABREVIATURA, COLOR, ESTADO) VALUES (?, ?, ?, 'A')"
+                "INSERT INTO AG_TIPOCONSULTA (NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, ESTADO) VALUES (?, ?, ?, NULLIF(?, ''), 'A')"
             );
-            $stmt->bind_param("sss", $nombres, $abreviatura, $color);
+            $stmt->bind_param("ssss", $nombres, $abreviatura, $color, $rolAtiende);
             $stmt->execute();
             $stmt->close();
             $mensaje = ['ok', t('tc.msg.created')];
@@ -63,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tipos = [];
-$res = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, ABREVIATURA, COLOR, ESTADO FROM AG_TIPOCONSULTA ORDER BY NOMBRES");
+$res = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, ESTADO FROM AG_TIPOCONSULTA ORDER BY NOMBRES");
 while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
 ?>
 <!DOCTYPE html>
@@ -187,18 +191,20 @@ while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
                                         <th><?php te('common.color'); ?></th>
                                         <th><?php te('common.name'); ?></th>
                                         <th><?php te('common.abbreviation'); ?></th>
+                                        <th><?php echo current_lang()==='en'?'Handled by':'Lo atiende'; ?></th>
                                         <th class="text-center"><?php te('common.status'); ?></th>
                                         <th class="text-end"><?php te('common.actions'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 <?php if (empty($tipos)): ?>
-                                    <tr><td colspan="5" class="text-center text-muted py-4"><?php te('tc.none'); ?></td></tr>
+                                    <tr><td colspan="6" class="text-center text-muted py-4"><?php te('tc.none'); ?></td></tr>
                                 <?php else: foreach ($tipos as $t): ?>
                                     <tr>
                                         <td><span class="swatch" style="background:<?php echo htmlspecialchars($t['COLOR'] ?: $colorDefault); ?>"></span></td>
                                         <td><?php echo htmlspecialchars($t['NOMBRES']); ?></td>
                                         <td><?php echo htmlspecialchars($t['ABREVIATURA'] ?? '—'); ?></td>
+                                        <td><?php $ra = $t['ROL_ATIENDE'] ?? ''; echo $ra === 'ENFERMERA' ? (current_lang()==='en'?'Nurse':'Enfermera') : ($ra === 'DOCTOR' ? (current_lang()==='en'?'Doctor':'Doctor') : '<span class="text-muted">'.(current_lang()==='en'?'Any':'Cualquiera').'</span>'); ?></td>
                                         <td class="text-center">
                                             <?php if ($t['ESTADO'] === 'A'): ?>
                                                 <span class="badge bg-success"><?php te('common.active'); ?></span>
@@ -253,6 +259,15 @@ while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
                         <input type="text" class="form-control" name="abreviatura" id="ftAbreviatura" maxlength="20">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label"><?php echo current_lang()==='en'?'Handled by':'Lo atiende'; ?></label>
+                        <select class="form-select" name="rol_atiende" id="ftRol">
+                            <option value=""><?php echo current_lang()==='en'?'Any professional':'Cualquier profesional'; ?></option>
+                            <option value="DOCTOR"><?php echo current_lang()==='en'?'Doctor':'Doctor'; ?></option>
+                            <option value="ENFERMERA"><?php echo current_lang()==='en'?'Nurse (e.g. IV therapy)':'Enfermera (p. ej. sueroterapia)'; ?></option>
+                        </select>
+                        <div class="form-text"><?php echo current_lang()==='en'?'When scheduling this service, only professionals with that role are offered.':'Al agendar este servicio solo se ofrecen los profesionales con ese rol.'; ?></div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label d-block"><?php te('common.color'); ?></label>
                         <input type="color" name="color" id="ftColor" value="<?php echo htmlspecialchars($colorDefault); ?>">
                     </div>
@@ -276,6 +291,7 @@ function nuevoTipo() {
     document.getElementById('ftId').value = '0';
     document.getElementById('ftNombres').value = '';
     document.getElementById('ftAbreviatura').value = '';
+    document.getElementById('ftRol').value = '';
     document.getElementById('ftColor').value = '<?php echo htmlspecialchars($colorDefault); ?>';
     modalTipo.show();
 }
@@ -285,6 +301,7 @@ function editarTipo(t) {
     document.getElementById('ftId').value = t.IDTIPOCONSULTA;
     document.getElementById('ftNombres').value = t.NOMBRES;
     document.getElementById('ftAbreviatura').value = t.ABREVIATURA || '';
+    document.getElementById('ftRol').value = t.ROL_ATIENDE || '';
     document.getElementById('ftColor').value = t.COLOR || '<?php echo htmlspecialchars($colorDefault); ?>';
     modalTipo.show();
 }

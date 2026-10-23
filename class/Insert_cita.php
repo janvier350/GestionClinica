@@ -80,6 +80,23 @@ if ($faltantes) {
     exit;
 }
 
+// Si el servicio lo atiende un rol (p. ej. sueroterapia → ENFERMERA), el profesional debe tener ese rol.
+$rcol = @$conexion->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_TIPOCONSULTA' AND COLUMN_NAME='ROL_ATIENDE'");
+if ($rcol && (int)$rcol->fetch_assoc()['c'] > 0) {
+    $rq = $conexion->query("SELECT ROL_ATIENDE FROM AG_TIPOCONSULTA WHERE IDTIPOCONSULTA = " . (int)$Idconsulta . " LIMIT 1");
+    $rolReq = $rq ? strtoupper(trim((string)($rq->fetch_assoc()['ROL_ATIENDE'] ?? ''))) : '';
+    if ($rolReq !== '') {
+        $rr = $conexion->query("SELECT R.CARGO FROM ADM_USUARIO U INNER JOIN ADM_ROL R ON R.IDADM_ROL = U.IDADM_ROL WHERE U.IDADM_USUARIO = " . (int)$IdDoctor . " LIMIT 1");
+        $rolReal = $rr ? strtoupper(trim((string)($rr->fetch_assoc()['CARGO'] ?? ''))) : '';
+        if ($rolReal !== $rolReq) {
+            $msgRol = $en ? "This service is handled by " . ($rolReq === 'ENFERMERA' ? "nursing" : "a doctor") . ". Choose a professional with that role."
+                          : "Este servicio lo atiende: " . strtolower($rolReq === 'ENFERMERA' ? 'enfermería' : 'un doctor') . ". Elige un profesional con ese rol.";
+            echo "<script>alert(" . json_encode($msgRol, JSON_UNESCAPED_UNICODE) . "); history.back();</script>";
+            exit;
+        }
+    }
+}
+
 // Calcular hora final (+1 hora): toda cita dura 1 hora (como Kalix)
 $timeFin = date("H:i", strtotime($timeIni) + 60 * 60);
 

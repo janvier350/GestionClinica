@@ -141,7 +141,16 @@ function suero_registrar($c, $idOrden, $estado, $lote, $obs, $reacc, $fechaHora,
     $idDer = $r ? (int)($r->fetch_assoc()['IDDERIVACION'] ?? 0) : 0;
     if ($idDer) {
         $p = $c->query("SELECT COUNT(*) c FROM suero_orden WHERE IDDERIVACION = $idDer AND ESTADO='Pendiente'");
-        if ($p && (int)$p->fetch_assoc()['c'] === 0) $c->query("UPDATE derivacion SET ESTADO='Atendida' WHERE IDDERIVACION = $idDer");
+        if ($p && (int)$p->fetch_assoc()['c'] === 0) {
+            $c->query("UPDATE derivacion SET ESTADO='Atendida' WHERE IDDERIVACION = $idDer");
+            // Cita de sueroterapia atendida por enfermería: al terminar todas sus órdenes, la cita queda Atendida.
+            $c->query("UPDATE AG_CITA A
+                         INNER JOIN derivacion D ON D.IDCITA_ORIGEN = A.IDCITA AND D.IDDERIVACION = $idDer
+                         INNER JOIN ADM_USUARIO U ON U.IDADM_USUARIO = A.IDDOCTOR
+                         INNER JOIN ADM_ROL R ON R.IDADM_ROL = U.IDADM_ROL AND R.CARGO = 'ENFERMERA'
+                          SET A.ESTADO_CITA = 'A'
+                        WHERE A.ESTADO_CITA NOT IN ('A','Cancelada','Cancelado')");
+        }
     }
     auditar($c, 'Derivación', 'editar', 'suero_orden', $idOrden, ($estado === 'Aplicado' ? 'Aplicó' : 'Suspendió').' suero (orden #'.$idOrden.')');
     return true;

@@ -92,6 +92,14 @@ $rgFecha    = $registro['reg']['FECHA']    ?? ($d['FECHA_CITA'] ?? date('Y-m-d')
 $rgTratante = $registro['reg']['TRATANTE'] ?? trim(($d['DOC_NOMBRES'] ?? '').' '.($d['DOC_APELLIDOS'] ?? ''));
 $rgItems    = $registro['items'] ?: [['INDICACION'=>'','CANTIDAD'=>'','RECOMENDACION'=>'']];
 
+// Exámenes del paciente (órdenes y seguimiento)
+require_once(__DIR__ . '/class/enfermeria.php');
+$modExamenes   = modulo_activo('examenes');
+$puedeOrdenar  = $modExamenes && puede('examenes.ordenar');
+$verExamenes   = $modExamenes && puede('examenes.registrar');
+$examenesPac   = [];
+if ($puedeOrdenar || $verExamenes) { enfermeria_asegurar_tablas($conexion); $examenesPac = examenes_paciente($conexion, $idPacienteA); }
+
 // Derivación: la recibida (esta cita es el destino) y las emitidas desde esta cita
 require_once(__DIR__ . '/class/derivacion.php');
 $derRecibida = null; $derEmitidas = []; $doctoresDerivar = [];
@@ -498,6 +506,32 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
             <button type="button" class="btn btn-sm btn-success" id="rgGuardar" onclick="rgGuardar()"><i class="bi bi-save"></i> <?php echo $enR ? 'Save record' : 'Guardar registro'; ?></button>
             <span id="rgMsg" class="small"></span>
         </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if ($puedeOrdenar || $verExamenes): $enX = (current_lang() === 'en'); $pendX = count(array_filter($examenesPac, function($e){ return $e['ESTADO']==='Pendiente'; })); ?>
+<div class="main-card mb-3 card border-warning" id="cardExamenes">
+    <div class="card-body py-3">
+        <div class="fw-semibold mb-2"><i class="bi bi-clipboard2-data text-warning me-1"></i><?php echo $enX ? 'Exams' : 'Exámenes'; ?>
+            <span class="badge bg-warning text-dark ms-1"><?php echo $pendX; ?> <?php echo $enX ? 'pending' : 'pendientes'; ?></span></div>
+        <?php if (!$examenesPac): ?><div class="small text-muted mb-2"><?php echo $enX ? 'No exams ordered for this patient.' : 'Este paciente no tiene exámenes solicitados.'; ?></div>
+        <?php else: ?><ul class="list-unstyled small mb-2">
+            <?php foreach ($examenesPac as $ex): $cl = $ex['ESTADO']==='Pendiente' ? 'warning text-dark' : ($ex['ESTADO']==='Realizado' ? 'success' : 'secondary'); ?>
+            <li class="mb-1"><span class="badge bg-<?php echo $cl; ?>"><?php echo h($ex['ESTADO']); ?></span> <b><?php echo h($ex['EXAMEN']); ?></b>
+                <span class="text-muted">(<?php echo h($ex['TIPO']); ?> · <?php echo h(date('m/d/Y', strtotime($ex['FECHA_SOLICITUD']))); ?><?php echo $ex['SOLICITA'] ? ' · '.h($ex['SOLICITA']) : ''; ?>)</span>
+                <?php if ($ex['INDICACION']): ?><span class="text-muted"> — <?php echo h($ex['INDICACION']); ?></span><?php endif; ?>
+                <?php if ($ex['ESTADO']!=='Pendiente' && $ex['RESULTADO']): ?><div><?php echo nl2br(h($ex['RESULTADO'])); ?></div><?php endif; ?>
+                <?php if ($ex['ESTADO']==='Pendiente' && $verExamenes): ?><button type="button" class="btn btn-sm btn-outline-success py-0 ms-1" onclick="exAtencionRealizado(<?php echo (int)$ex['IDEXAMEN']; ?>)"><i class="bi bi-check2"></i> <?php echo $enX ? 'Mark done' : 'Marcar realizado'; ?></button><?php endif; ?></li>
+            <?php endforeach; ?></ul><?php endif; ?>
+        <?php if ($puedeOrdenar): ?>
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2"><label class="form-label small mb-0"><?php echo $enX ? 'Type' : 'Tipo'; ?></label><select id="exTipo" class="form-select form-select-sm"><?php foreach (examen_tipos() as $tp): ?><option><?php echo h($tp); ?></option><?php endforeach; ?></select></div>
+            <div class="col-md-4"><label class="form-label small mb-0"><?php echo $enX ? 'Exam' : 'Examen'; ?></label><input id="exNombre" class="form-control form-control-sm" maxlength="200" placeholder="<?php echo $enX ? 'e.g. Abdominal ultrasound, CBC' : 'p. ej. Ecografía abdominal, biometría hemática'; ?>"></div>
+            <div class="col-md-4"><label class="form-label small mb-0"><?php echo $enX ? 'Instructions (optional)' : 'Indicación (opcional)'; ?></label><input id="exIndic" class="form-control form-control-sm"></div>
+            <div class="col-md-2"><button type="button" class="btn btn-sm btn-warning w-100" onclick="exAtencionCrear()"><i class="bi bi-plus"></i> <?php echo $enX ? 'Order' : 'Solicitar'; ?></button></div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>
@@ -1995,6 +2029,25 @@ function detenerDictado() {
     </div>
 </div>
 
+<?php if ($puedeOrdenar || $verExamenes): ?>
+<script>
+function exAtencionPost(fd, enOk) {
+    fetch('examen_accion.php', {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+        if (j.ok) location.reload(); else alert(j.error === 'EXAMEN_REQUERIDO' ? <?php echo json_encode(current_lang()==='en' ? 'Enter the exam name.' : 'Escribe el nombre del examen.'); ?> : <?php echo json_encode(current_lang()==='en' ? 'Could not save.' : 'No se pudo guardar.'); ?>);
+    });
+}
+function exAtencionCrear() {
+    var fd = new FormData(); fd.append('accion','crear'); fd.append('idPaciente', <?php echo (int)$idPacienteA; ?>); fd.append('idCita', <?php echo (int)$idCitaInt; ?>);
+    fd.append('tipo', document.getElementById('exTipo').value); fd.append('examen', document.getElementById('exNombre').value); fd.append('indicacion', document.getElementById('exIndic').value);
+    exAtencionPost(fd);
+}
+function exAtencionRealizado(id) {
+    var res = prompt(<?php echo json_encode(current_lang()==='en' ? 'Result / observation (optional):' : 'Resultado u observación (opcional):'); ?>, '');
+    if (res === null) return;
+    var fd = new FormData(); fd.append('accion','realizar'); fd.append('idExamen', id); fd.append('resultado', res); exAtencionPost(fd);
+}
+</script>
+<?php endif; ?>
 <?php if ($puedeRegistro): ?>
 <script>
 (function(){

@@ -136,6 +136,13 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </a>
             </li>
             <?php endif; ?>
+            <?php if (puede('examenes.registrar')): ?>
+            <li>
+                <a href="examenes.php" class="<?php echo menuActivo('examenes.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-clipboard2-data"></i> <?php echo (current_lang()==='en'?'Exams':'Exámenes'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (puede('sueros.aplicar')): ?>
             <li>
                 <a href="sueros.php" class="<?php echo menuActivo('sueros.php', $paginaActual); ?>">

@@ -7,6 +7,7 @@ if (isset($_SESSION["loggedin"])) {
     exit();
 }
 require_once(__DIR__ . '/lang/i18n.php');
+require_once(__DIR__ . '/class/mailer.php');   // nombre de la clínica configurable
 $lang = current_lang();
 ?>
 <!DOCTYPE html>
@@ -128,7 +129,7 @@ $lang = current_lang();
         /* ── Panel derecho: logo ──────────── */
         .login-logo-panel {
             width: 220px;
-            background: linear-gradient(160deg, #0e1f55 0%, #1a3a8c 100%);
+            background: #82C5CC;   /* color de marca (L'Chaim) */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -138,7 +139,7 @@ $lang = current_lang();
         }
 
         /* ── SVG Logo ────────────────────── */
-        .logo-svg { width: 110px; height: 110px; }
+        .logo-img { width: 170px; height: 170px; display: block; }
 
         .logo-wordmark {
             text-align: center;
@@ -165,12 +166,12 @@ $lang = current_lang();
         .logo-divider {
             width: 32px;
             height: 1px;
-            background: rgba(255,255,255,.2);
+            background: rgba(14,60,66,.25);
         }
 
         .logo-caption {
             font-size: .68rem;
-            color: rgba(255,255,255,.35);
+            color: rgba(14,60,66,.75);
             text-align: center;
             letter-spacing: .05em;
         }
@@ -178,7 +179,7 @@ $lang = current_lang();
         @media (max-width: 620px) {
             .login-card { flex-direction: column; width: 92%; }
             .login-logo-panel { width: 100%; padding: 28px; flex-direction: row; gap: 16px; }
-            .logo-svg { width: 64px; height: 64px; }
+            .logo-img { width: 72px; height: 72px; }
         }
     </style>
 </head>
@@ -219,69 +220,7 @@ $lang = current_lang();
     <!-- ── LOGO PANEL ───────────────────────────────── -->
     <div class="login-logo-panel">
 
-        <!-- Logo SVG corporativo/minimalista -->
-        <svg class="logo-svg" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Anillo exterior -->
-            <circle cx="55" cy="55" r="50" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
-            <!-- Anillo medio -->
-            <circle cx="55" cy="55" r="40" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-
-            <!-- Hoja estilizada -->
-            <path d="M55 22
-                     C55 22 32 34 32 55
-                     C32 68 42 76 55 78
-                     C68 76 78 68 78 55
-                     C78 34 55 22 55 22Z"
-                  fill="rgba(255,255,255,0.12)"
-                  stroke="rgba(255,255,255,0.5)"
-                  stroke-width="1.2"/>
-
-            <!-- Nervio central de la hoja -->
-            <line x1="55" y1="28" x2="55" y2="78"
-                  stroke="rgba(255,255,255,0.6)"
-                  stroke-width="1"
-                  stroke-linecap="round"/>
-
-            <!-- Nervios laterales -->
-            <path d="M55 42 C48 46 44 52 44 58"
-                  stroke="rgba(255,255,255,0.35)"
-                  stroke-width="0.8"
-                  stroke-linecap="round"
-                  fill="none"/>
-            <path d="M55 42 C62 46 66 52 66 58"
-                  stroke="rgba(255,255,255,0.35)"
-                  stroke-width="0.8"
-                  stroke-linecap="round"
-                  fill="none"/>
-            <path d="M55 54 C50 57 47 62 47 66"
-                  stroke="rgba(255,255,255,0.25)"
-                  stroke-width="0.8"
-                  stroke-linecap="round"
-                  fill="none"/>
-            <path d="M55 54 C60 57 63 62 63 66"
-                  stroke="rgba(255,255,255,0.25)"
-                  stroke-width="0.8"
-                  stroke-linecap="round"
-                  fill="none"/>
-
-            <!-- Punto central superior -->
-            <circle cx="55" cy="22" r="2.5" fill="white" opacity="0.8"/>
-
-            <!-- Iniciales SR -->
-            <text x="55" y="62"
-                  text-anchor="middle"
-                  fill="white"
-                  font-family="Segoe UI, Arial, sans-serif"
-                  font-size="13"
-                  font-weight="700"
-                  letter-spacing="2"
-                  opacity="0.9">SN</text>
-        </svg>
-
-        <div class="logo-wordmark">
-            <span class="brand">SROSS</span>
-            <span class="tagline">Nutritions</span>
-        </div>
+        <img class="logo-img" src="images/logo_clinica.png" alt="<?php echo htmlspecialchars(mail_brand(), ENT_QUOTES, 'UTF-8'); ?>">
 
         <div class="logo-divider"></div>
 

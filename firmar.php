@@ -3,6 +3,7 @@ ob_start();
 session_start();
 require_once("class/funciones.php");
 require_once("class/conexionBD.php");
+require_once(__DIR__ . "/class/mailer.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -58,7 +59,7 @@ function aplicarCampos($html, $d) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Firmar documento - Sross Nutritions</title>
+    <title>Firmar documento - <?php echo htmlspecialchars(mail_brand(), ENT_QUOTES, 'UTF-8'); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -76,7 +77,7 @@ function aplicarCampos($html, $d) {
 <div class="doc-wrap">
     <div class="doc-head">
         <h4 class="mb-0"><i class="bi bi-file-earmark-text"></i> Documento para firmar</h4>
-        <div style="color:#e0c8f8;font-size:.9rem;">Sross Nutritions</div>
+        <div style="color:#e0c8f8;font-size:.9rem;"><?php echo htmlspecialchars(mail_brand(), ENT_QUOTES, 'UTF-8'); ?></div>
     </div>
     <div class="doc-body">
 
