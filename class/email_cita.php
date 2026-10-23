@@ -14,7 +14,8 @@
  *   $e['subject'], $e['html'], $e['text'], $e['fromName'], $e['replyName']
  */
 require_once(__DIR__ . '/../lang/i18n.php');
-require_once(__DIR__ . '/mailer.php');   // marca, remitente y pie configurables
+require_once(__DIR__ . '/mailer.php');
+require_once(__DIR__ . '/whatsapp.php');   // marca, remitente y pie configurables
 
 if (!function_exists('patient_lang')) {
     // Idioma preferido del paciente ('en'|'es'); por defecto 'es'.
@@ -150,6 +151,7 @@ if (!function_exists('build_cita_email')) {
         " . $noteHtml . "
         <tr>
           <td style='background:#eef2f7;padding:16px 32px;text-align:center;'>
+            " . (wa_numero() !== '' ? "<p style='margin:0 0 8px;font-size:13px;'><a href='https://wa.me/" . wa_numero() . "' style='color:#128c7e;text-decoration:none;font-weight:bold;'>💬 " . $esc(tl($lang, 'email.waContact')) . ": +" . wa_numero() . "</a></p>" : '') . "
             <p style='margin:0;font-size:12px;color:#999;'>" . (mail_footer($lang) ?? tl($lang, 'email.footer')) . "</p>
           </td>
         </tr>
@@ -170,6 +172,7 @@ if (!function_exists('build_cita_email')) {
             $text .= "\n(" . tl($lang, 'email.prevDate') . " " . fecha_bonita_lang($fechaAnt, $lang) . " " . tl($lang, 'email.at') . " $horaAnt)\n";
         }
         if ($c['note']) $text .= "\n" . tl($lang, $c['note']) . "\n";
+        if (wa_numero() !== '') $text .= "\n" . tl($lang, 'email.waContact') . ': +' . wa_numero() . "\n";
         $text .= "\n" . mail_brand();
 
         return array(

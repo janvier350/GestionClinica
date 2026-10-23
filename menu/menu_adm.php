@@ -367,7 +367,7 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
             </li>
             <li>
                 <a href="mail_config.php" class="<?php echo menuActivo('mail_config.php', $paginaActual); ?>">
-                    <i class="metismenu-icon bi bi-envelope-at"></i> <?php echo (current_lang()==='en'?'Email settings':'Correo'); ?>
+                    <i class="metismenu-icon bi bi-envelope-at"></i> <?php echo (current_lang()==='en'?'Email & WhatsApp':'Correo y WhatsApp'); ?>
                 </a>
             </li>
             <li>

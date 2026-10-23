@@ -4,6 +4,7 @@ session_start();
 require_once("class/funciones.php");
 require_once("class/conexionBD.php");
 require_once(__DIR__ . "/lang/i18n.php");
+require_once(__DIR__ . "/class/whatsapp.php");
 $conexion = conectarse();
 
 if(!isset($_SESSION["rol"])){
@@ -1164,6 +1165,13 @@ const TC = <?php echo json_encode(array(
     'waMid'           => t('cal.js.waMid'),
     'waAt'            => t('cal.js.waAt'),
     'waEnd'           => t('cal.js.waEnd'),
+    'waContact'       => t('cal.js.waContact'),
+    'waNumberLbl'     => t('cal.js.waNumberLbl'),
+    'waSaveToRecord'  => t('cal.js.waSaveToRecord'),
+    'waSaved'         => t('cal.js.waSaved'),
+    'waSaveError'     => t('cal.js.waSaveError'),
+    'waCC'            => wa_pais(),
+    'waClinic'        => wa_numero(),
     'selectDateTime'  => t('cal.js.selectDateTime'),
     'confirmReschedPre'=> t('cal.js.confirmReschedPre'),
     'at'              => t('cal.js.at'),
@@ -1701,21 +1709,46 @@ const ESTADOS_CERRADOS = ['A', 'Cancelada', 'Cancelado', 'Cancelación Tardía',
 
 let citaActual = null; // datos de la cita abierta en el modal (para prellenar el panel de edición)
 
+// ── WhatsApp: normalización (misma regla que class/whatsapp.php) y número editable ──
+let waMsgBase = '', waPacienteId = 0;
+function waNormalizar(raw) {
+    let t = String(raw || '').replace(/\D/g, '');
+    if (!t) return '';
+    if (t.startsWith('00'))      t = t.slice(2);
+    else if (t.startsWith('0'))  t = TC.waCC + t.slice(1);
+    else if (t.length <= 10 && !t.startsWith(TC.waCC)) t = TC.waCC + t;
+    return t;
+}
+function waActualizar() {
+    const t = waNormalizar(document.getElementById('waNumero').value);
+    const a = document.getElementById('btnWa'), nota = document.getElementById('waNota');
+    if (t.length >= 8) { a.href = `https://wa.me/${t}?text=${waMsgBase}`; a.classList.remove('disabled'); nota.classList.add('d-none'); }
+    else               { a.href = '#'; a.classList.add('disabled'); nota.classList.remove('d-none'); }
+}
+function waGuardarEnFicha() {
+    const v = document.getElementById('waNumero').value.trim();
+    const fd = new FormData(); fd.append('idPaciente', waPacienteId); fd.append('telefono', v);
+    fetch('paciente_telefono_guardar.php', {method:'POST', body:fd, credentials:'same-origin'})
+        .then(r => r.json()).then(j => { alert(j.ok ? TC.waSaved : TC.waSaveError); })
+        .catch(() => alert(TC.waSaveError));
+}
+
 function abrirModalCita(id, title, startDate, p) {
     const est      = p.cita || 'Pendiente';
     const atendida = est === 'A';
     const cerrada  = ESTADOS_CERRADOS.includes(est);
 
     // Limpiar y formatear teléfono para WhatsApp
-    let tel = p.telefono ? p.telefono.replace(/\D/g, '') : '';
-    if (tel.length === 9 && tel.startsWith('9'))        tel = '593' + tel;
-    else if (tel.length === 10 && tel.startsWith('09')) tel = '593' + tel.substring(1);
+    // (el número es editable en el modal; ver waNormalizar / waActualizar)
+    const tel = waNormalizar(p.telefono || '');
 
-    const msg = encodeURIComponent(
+    waMsgBase = encodeURIComponent(
         `${TC.waPre} ${p.consulta} ${TC.waMid} ` +
         `${startDate.toLocaleDateString('en-US')} ${TC.waAt} ` +
-        `${startDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}. ${TC.waEnd}`
+        `${startDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}. ${TC.waEnd}` +
+        (TC.waClinic ? ` ${TC.waContact} +${TC.waClinic}.` : '')
     );
+    waPacienteId = p.idpaciente || 0;
 
     document.getElementById('eventDetails').innerHTML = `
         <div class="row">
@@ -1728,19 +1761,23 @@ function abrirModalCita(id, title, startDate, p) {
                 <p><strong>${TC.lblStatus}</strong> ${estadoBadge(est)}</p>
             </div>
             <div class="col-md-4 text-center">
-                ${tel
-                    ? `<a href="https://wa.me/${tel}?text=${msg}" target="_blank"
-                        class="btn btn-outline-success btn-lg mb-2">
-                        <i class="bi bi-whatsapp"></i> ${TC.confirmWhatsapp}
-                       </a>`
-                    : `<p class="text-danger small">${TC.noWhatsapp}</p>`
-                }
+                <label class="small text-muted mb-1">${TC.waNumberLbl}</label>
+                <div class="input-group input-group-sm mb-2">
+                    <span class="input-group-text"><i class="bi bi-whatsapp text-success"></i></span>
+                    <input type="text" id="waNumero" class="form-control" value="${tel ? '+' + tel : ''}" placeholder="+${TC.waCC}…" oninput="waActualizar()">
+                </div>
+                <a id="btnWa" href="#" target="_blank" class="btn btn-outline-success btn-lg mb-2 disabled">
+                    <i class="bi bi-whatsapp"></i> ${TC.confirmWhatsapp}
+                </a>
+                <div id="waNota" class="text-danger small ${tel ? 'd-none' : ''}">${TC.noWhatsapp}</div>
+                ${waPacienteId ? `<button type="button" class="btn btn-link btn-sm p-0" onclick="waGuardarEnFicha()"><i class="bi bi-person-check"></i> ${TC.waSaveToRecord}</button>` : ''}
             </div>
         </div>
         <hr>
         <p><strong>${TC.lblType}</strong> ${p.consulta}</p>
         ${p.comentario ? `<p><strong>${TC.lblComment}</strong> ${p.comentario}</p>` : ''}
     `;
+    waActualizar();
 
     // Controlar visibilidad de botones según estado
     document.getElementById('idCita').value     = id;

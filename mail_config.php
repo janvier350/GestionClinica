@@ -11,6 +11,7 @@ require_once("class/conexionBD.php");
 require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/mailer.php");
+require_once(__DIR__ . "/class/whatsapp.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -52,6 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             auditar($conexion, 'Configuración', 'editar', 'CONFIG', null, 'Actualizó la configuración de correo (servidor '.$v['host'].', remitente '.$v['from_email'].($v['pass'] !== '' ? ', cambió la contraseña' : '').')');
             $msg = $en ? 'Email settings saved.' : 'Configuración de correo guardada.'; $msgTipo = 'success';
         } else { $msg = $en ? 'Could not save.' : 'No se pudo guardar.'; $msgTipo = 'danger'; }
+    } elseif ($accion === 'whatsapp') {
+        [$okWa, $errWa] = wa_cfg_guardar($conexion, $_POST['wa_country'] ?? '', trim($_POST['wa_number'] ?? ''));
+        if ($okWa) {
+            auditar($conexion, 'Configuración', 'editar', 'CONFIG', null, 'Actualizó WhatsApp (país +'.wa_pais().', número de la clínica '.(wa_numero() !== '' ? '+'.wa_numero() : 'sin definir').')');
+            $msg = $en ? 'WhatsApp settings saved.' : 'Configuración de WhatsApp guardada.'; $msgTipo = 'success';
+        } else {
+            $msg = $errWa === 'COUNTRY' ? ($en ? 'Invalid country code (digits only, e.g. 593).' : 'Código de país no válido (solo dígitos, ej. 593).')
+                 : ($errWa === 'NUMBER' ? ($en ? 'Invalid WhatsApp number.' : 'Número de WhatsApp no válido.') : ($en ? 'Could not save.' : 'No se pudo guardar.'));
+            $msgTipo = 'danger';
+        }
     } elseif ($accion === 'probar') {
         $dest = trim($_POST['destino'] ?? '');
         if (!filter_var($dest, FILTER_VALIDATE_EMAIL)) { $msg = $en ? 'Enter a valid test address.' : 'Ingresa un correo de prueba válido.'; $msgTipo = 'danger'; }
@@ -128,8 +139,8 @@ $tienePass = ($c['pass'] !== '');
 
             <div class="app-page-title mb-3"><div class="page-title-wrapper"><div class="page-title-heading">
                 <div class="page-title-icon"><i class="pe-7s-mail icon-gradient bg-happy-itmeo"></i></div>
-                <div><?php echo $en?'Email settings':'Configuración de correo'; ?>
-                    <div class="page-title-subheading"><?php echo $en?'Mail account used to email patients and new users.':'Cuenta de correo con la que se escribe a pacientes y usuarios nuevos.'; ?></div>
+                <div><?php echo $en?'Email & WhatsApp':'Correo y WhatsApp'; ?>
+                    <div class="page-title-subheading"><?php echo $en?'Mail account used to email patients and new users, and the clinic WhatsApp.':'Cuenta de correo con la que se escribe a pacientes y usuarios nuevos, y WhatsApp de la clínica.'; ?></div>
                 </div>
             </div></div></div>
 
@@ -178,6 +189,21 @@ $tienePass = ($c['pass'] !== '');
                     <div class="col-md-6"><label class="form-label">English</label><textarea name="footer_en" rows="3" class="form-control"><?php echo h($c['footer_en']); ?></textarea></div>
                 </div>
                 <div class="mt-3"><button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> <?php echo $en?'Save':'Guardar'; ?></button></div>
+            </div></form>
+
+            <form method="POST" class="card shadow-sm mb-3"><div class="card-body">
+                <input type="hidden" name="accion" value="whatsapp">
+                <h6><i class="bi bi-whatsapp text-success"></i> WhatsApp</h6>
+                <div class="row g-2">
+                    <div class="col-md-3"><label class="form-label"><?php echo $en?'Default country code':'Código de país por defecto'; ?></label>
+                        <div class="input-group"><span class="input-group-text">+</span><input name="wa_country" class="form-control" maxlength="4" value="<?php echo h(wa_pais()); ?>" placeholder="593"></div></div>
+                    <div class="col-md-9"><label class="form-label"><?php echo $en?"Clinic WhatsApp number":"Número de WhatsApp de la clínica"; ?></label>
+                        <input name="wa_number" class="form-control" value="<?php echo wa_numero() !== '' ? '+'.h(wa_numero()) : ''; ?>" placeholder="+593 99 123 4567"></div>
+                </div>
+                <div class="form-text mb-2"><?php echo $en
+                    ? 'The country code completes patient phones typed without it (e.g. 0991234567 → +593991234567). The clinic number is shown as a contact in appointment emails and in the WhatsApp confirmation message.'
+                    : 'El código de país completa los teléfonos de pacientes escritos sin él (ej. 0991234567 → +593991234567). El número de la clínica se muestra como contacto en los correos de cita y en el mensaje de confirmación por WhatsApp.'; ?></div>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> <?php echo $en?'Save WhatsApp':'Guardar WhatsApp'; ?></button>
             </div></form>
 
             <form method="POST" class="card shadow-sm"><div class="card-body">
