@@ -4,6 +4,7 @@ ini_set('display_errors', 1);
 require_once("funciones.php");
 require_once("conexionBD.php");
 require_once(__DIR__ . "/auditoria.php");
+require_once(__DIR__ . "/modulos.php");
 require_once(__DIR__ . "/../lang/i18n.php");
 $conexion = conectarse();
 ?>
@@ -43,7 +44,7 @@ if ($result->num_rows > 0) {
         auditar($conexion, 'Sesión', 'login', 'ADM_USUARIO', $row['IDADM_USUARIO'], 'Inició sesión');
 
         echo "<script language='JavaScript'>";
-        echo 'self.location = "../SCH_Calendar.php"';
+        echo 'self.location = "' . (strtoupper($row['CARGO']) === 'ENFERMERA' && modulo_activo('triaje') ? '../triaje.php' : '../SCH_Calendar.php') . '"';
         echo "</script>";
     } else {
         auditar($conexion, 'Sesión', 'login_fallido', 'ADM_USUARIO', null, 'Contraseña incorrecta para usuario: '.$username);

@@ -66,6 +66,7 @@ $eventos   = array();
 $colDefault = [
     'pendiente'             => '#3b4252',
     'confirmada'            => '#6f42c1',
+    'triada'                => '#17a2b8',
     'atendida'              => '#28a745',
     'cancelada'             => '#fd7e14',
     'cancelacion_tardia'    => '#ffc107',
@@ -117,6 +118,7 @@ function claveEstado($e) {
         case 'Pendiente':
         case 'Reagendada':                return 'pendiente';
         case 'Confirmada':                return 'confirmada';
+        case 'Triada':                    return 'triada';
         case 'A':                         return 'atendida';
         case 'Cancelada':
         case 'Cancelado':                 return 'cancelada';
@@ -1127,6 +1129,7 @@ const ESTADO_LABELS = {
     'Pendiente':                   <?php echo json_encode(estado_label('Pendiente')); ?>,
     'Reagendada':                  <?php echo json_encode(estado_label('Reagendada')); ?>,
     'Confirmada':                  <?php echo json_encode(estado_label('Confirmada')); ?>,
+    'Triada':                      <?php echo json_encode(estado_label('Triada')); ?>,
     'A':                           <?php echo json_encode(estado_label('Atendida')); ?>,
     'Cancelada':                   <?php echo json_encode(estado_label('Cancelada')); ?>,
     'Cancelado':                   <?php echo json_encode(estado_label('Cancelado')); ?>,
@@ -1219,6 +1222,7 @@ function estadoBadge(estado) {
         'Pendiente':                   '#212529',
         'Reagendada':                  '#212529',
         'Confirmada':                  '#6f42c1',
+        'Triada':                      '#17a2b8',
         'A':                           '#28a745',
         'Cancelada':                   '#fd7e14',
         'Cancelado':                   '#fd7e14',

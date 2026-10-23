@@ -129,6 +129,13 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                     <i class="metismenu-icon bi bi-calendar-x"></i> <?php te('menu.cancelled'); ?>
                 </a>
             </li>
+            <?php if (puede('triaje.registrar')): ?>
+            <li>
+                <a href="triaje.php" class="<?php echo menuActivo('triaje.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-heart-pulse"></i> <?php echo (current_lang()==='en'?'Triage':'Triaje'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (puede('agenda.atendidas')): ?>
             <li>
                 <a href="historial_atenciones.php" class="<?php echo menuActivo('historial_atenciones.php', $paginaActual); ?>">

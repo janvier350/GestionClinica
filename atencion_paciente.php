@@ -75,6 +75,11 @@ $d = $res->fetch_assoc();
 $idCitaInt   = (int)$idCita;
 $idPacienteA = (int)$d['IDPACIENTE'];
 
+// Triaje de esta cita (signos vitales + motivo tomados por enfermería), si el módulo está activo
+require_once(__DIR__ . '/class/permisos.php');
+require_once(__DIR__ . '/class/triaje.php');
+$triajeCita = modulo_activo('triaje') ? triaje_obtener($conexion, $idCitaInt) : null;
+
 // Nota ya guardada para esta misma cita (permite reabrir/editar una atención)
 $informeActual = '';
 if ($sa = $conexion->prepare("SELECT CONTENIDO_INFORME FROM AG_HISTORIAL WHERE IDCITA=? LIMIT 1")) {
@@ -367,6 +372,29 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
         </div>
     </div>
 </div>
+
+<?php if ($triajeCita): $tj = $triajeCita; $enT = (current_lang() === 'en');
+      $fmt = function($v){ if ($v === null) return '—'; $v = (string)$v; return strpos($v, '.') !== false ? rtrim(rtrim($v, '0'), '.') : $v; }; ?>
+<div class="main-card mb-3 card border-info">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="fw-semibold"><i class="bi bi-heart-pulse text-info me-1"></i><?php echo $enT ? 'Triage' : 'Triaje'; ?>
+                <span class="small text-muted ms-2"><?php echo h($tj['REGISTRADO_POR']); ?> · <?php echo h(date('m/d/Y H:i', strtotime($tj['FECHA_MODIFICACION'] ?: $tj['FECHA_REGISTRO']))); ?></span></div>
+            <?php if (puede('triaje.registrar')): ?><a class="btn btn-sm btn-outline-info" href="triaje.php?idCita=<?php echo (int)$idCitaInt; ?>&from=att"><i class="bi bi-pencil"></i> <?php echo $enT ? 'Edit' : 'Editar'; ?></a><?php endif; ?>
+        </div>
+        <div class="row g-2 small">
+            <div class="col-6 col-md-2"><span class="text-muted"><?php echo $enT ? 'Weight' : 'Peso'; ?></span><br><b><?php echo h($fmt($tj['PESO_KG'])); ?></b> kg</div>
+            <div class="col-6 col-md-2"><span class="text-muted"><?php echo $enT ? 'Height' : 'Talla'; ?></span><br><b><?php echo h($fmt($tj['TALLA_CM'])); ?></b> cm</div>
+            <div class="col-6 col-md-2"><span class="text-muted"><?php echo $enT ? 'BP' : 'P. arterial'; ?></span><br><b><?php echo h($tj['PRESION'] ?: '—'); ?></b></div>
+            <div class="col-6 col-md-2"><span class="text-muted"><?php echo $enT ? 'HR' : 'FC'; ?></span><br><b><?php echo h($fmt($tj['FC'])); ?></b></div>
+            <div class="col-6 col-md-2"><span class="text-muted">SatO₂</span><br><b><?php echo h($fmt($tj['SAT_O2'])); ?></b> %</div>
+            <div class="col-6 col-md-1"><span class="text-muted">Temp.</span><br><b><?php echo h($fmt($tj['TEMPERATURA'])); ?></b></div>
+            <div class="col-6 col-md-1"><span class="text-muted">Gluc.</span><br><b><?php echo h($fmt($tj['GLUCOSA'])); ?></b></div>
+        </div>
+        <?php if (trim((string)$tj['MOTIVO']) !== ''): ?><div class="mt-2"><span class="text-muted small"><?php echo $enT ? 'Reason for visit' : 'Motivo de consulta'; ?>:</span> <?php echo nl2br(h($tj['MOTIVO'])); ?></div><?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="main-card mb-3 card">
     <div class="card-body">
@@ -1861,5 +1889,17 @@ function detenerDictado() {
     </div>
 </div>
 
+<?php if ($triajeCita): ?>
+<script>
+// Precarga peso/talla del triaje (en kg/cm) si la atención aún no los tiene
+$(function(){
+    var tp = <?php echo json_encode($triajeCita['PESO_KG'] !== null ? (float)$triajeCita['PESO_KG'] : null); ?>,
+        tt = <?php echo json_encode($triajeCita['TALLA_CM'] !== null ? (float)$triajeCita['TALLA_CM'] : null); ?>;
+    if (tp && !$('#peso').val()) { $('#uKg').prop('checked', true); $('#peso').val(tp); }
+    if (tt && !$('#talla').val()) { $('#uCm').prop('checked', true); toggleTallaUnidad(); $('#talla').val(tt); }
+    calcularIMC();
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

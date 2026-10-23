@@ -168,6 +168,7 @@ return array(
     // ── Estados de cita ────────────────────────────────────────────────
     'estado.Pendiente'         => 'Pending',
     'estado.Confirmada'        => 'Confirmed',
+    'estado.Triada'            => 'Triaged (ready to see)',
     'estado.Cancelada'         => 'Cancelled',
     'estado.Cancelado'         => 'Cancelled',
     'estado.Atendida'          => 'Attended',
