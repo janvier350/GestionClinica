@@ -380,6 +380,11 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </a>
             </li>
             <li>
+                <a href="gestionar_agencias.php" class="<?php echo menuActivo('gestionar_agencias.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-geo-alt"></i> <?php echo (current_lang()==='en'?'Locations':'Localidades'); ?>
+                </a>
+            </li>
+            <li>
                 <a href="mail_config.php" class="<?php echo menuActivo('mail_config.php', $paginaActual); ?>">
                     <i class="metismenu-icon bi bi-envelope-at"></i> <?php echo (current_lang()==='en'?'Email & WhatsApp':'Correo y WhatsApp'); ?>
                 </a>

@@ -50,6 +50,7 @@ function permisos_catalogo() {
         'cfg.icd10'            => ['Catálogo ICD-10',               'Configuración', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
         'cfg.tiposconsulta'    => ['Tipos de consulta',             'Configuración', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0]],
         'cfg.ncp'              => ['Diagnósticos NCP/PES (catálogo)','Configuración', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
+        'cfg.agencias'         => ['Localidades / sedes (gestionar)', 'Configuración', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0]],
         'cfg.tiposseguro'      => ['Tipos de seguro',               'Configuración', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
         // Facturación
         'fact.crear'           => ['Crear factura',                 'Facturación',   ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
