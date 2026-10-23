@@ -25,8 +25,14 @@ function conectarse()
         }
     }
 
-    $link = mysqli_connect($db_host, $db_user, $db_pass);
-    mysqli_select_db($link, $db_nombre) or die("Error seleccionando la base de datos.");
+    $link = @mysqli_connect($db_host, $db_user, $db_pass);
+    if (!$link) {
+        // Mensaje claro en lugar de un HTTP 500 mudo (sin revelar credenciales).
+        http_response_code(500);
+        die("No se pudo conectar a la base de datos (usuario «" . htmlspecialchars($db_user) . "»). "
+          . "Verifique que exista config.local.php en la raíz de la aplicación con los datos correctos.");
+    }
+    mysqli_select_db($link, $db_nombre) or die("Error seleccionando la base de datos «" . htmlspecialchars($db_nombre) . "».");
     mysqli_set_charset($link, 'utf8mb4');   // ← línea correcta, procedural
 
     // Zona horaria de la aplicación — configurable por base de datos desde la
