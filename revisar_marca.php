@@ -27,6 +27,8 @@ $tablas = [   // tabla => [enlace, etiqueta]
     'ENFERMEDADES_DIAGNOSTICO' => ['PNC_CIE-10Crear.php',        'Categorías ICD-10'],
     'app_config'               => ['mail_config.php',            'Configuración (correo, zona horaria…)'],
 ];
+// Columna que identifica cada registro para mostrarlo con nombre (no solo con número).
+$etiquetaCol = ['documentos' => 'titulo', 'cat_plantillas_nutricion' => 'nombre_plantilla', 'AG_TIPOCONSULTA' => 'NOMBRES', 'ADM_AGENCIA' => 'DESCRIPCION'];
 $msg = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'desactivar_docs') {
     $conexion->query("UPDATE documentos SET estado = 0 WHERE estado = 1 AND (titulo LIKE '%$TERMINO%' OR contenido LIKE '%$TERMINO%')");
@@ -46,12 +48,13 @@ foreach ($tablas as $t => [$url, $etq]) {
     $pkc = ($pk && ($x = $pk->fetch_assoc())) ? $x['COLUMN_NAME'] : $cols[0];
     $items = [];
     foreach ($cols as $col) {
-        $q = $conexion->query("SELECT `$pkc` AS id, `$col` AS v FROM `$t` WHERE `$col` LIKE '%$TERMINO%' LIMIT 12");
+        $lab = isset($etiquetaCol[$t]) ? ", `{$etiquetaCol[$t]}` AS etiqueta" : ", NULL AS etiqueta";
+        $q = $conexion->query("SELECT `$pkc` AS id, `$col` AS v$lab FROM `$t` WHERE `$col` LIKE '%$TERMINO%' LIMIT 12");
         if (!$q) continue;
         while ($f = $q->fetch_assoc()) {
             $v = (string)$f['v']; $pos = stripos($v, $TERMINO);
             $snip = trim(preg_replace('/\s+/', ' ', strip_tags(mb_substr($v, max(0, $pos - 40), 100))));
-            $items[] = [$f['id'], $col, $snip];
+            $items[] = [$f['id'], $col, $snip, $f['etiqueta']];
         }
     }
     if ($items) { $hallazgos[$t] = [$url, $etq, $items]; $total += count($items); }
@@ -69,7 +72,7 @@ if ($q) $docsActivos = (int)$q->fetch_assoc()['c'];
 <?php if (!$hallazgos): ?><div class="alert alert-success">No se encontraron textos de la clínica anterior en los catálogos revisados.</div><?php endif; ?>
 <?php foreach ($hallazgos as $t => [$url, $etq, $items]): ?>
 <div class="card mb-3"><div class="card-header d-flex justify-content-between"><b><?php echo h($etq); ?></b> <span><code><?php echo h($t); ?></code> · <?php echo count($items); ?> coincidencia(s) · <a href="<?php echo h($url); ?>">Corregir</a></span></div>
-<ul class="list-group list-group-flush small"><?php foreach ($items as [$id, $col, $snip]): ?><li class="list-group-item py-1"><span class="badge bg-secondary me-1">#<?php echo h($id); ?></span><code><?php echo h($col); ?></code> … <?php echo h($snip); ?> …</li><?php endforeach; ?></ul></div>
+<ul class="list-group list-group-flush small"><?php foreach ($items as [$id, $col, $snip, $etq2]): ?><li class="list-group-item py-1"><span class="badge bg-secondary me-1">#<?php echo h($id); ?></span><?php if ($etq2 !== null && $etq2 !== ''): ?><b><?php echo h(mb_strimwidth($etq2, 0, 70, '…')); ?></b> · <?php endif; ?><code><?php echo h($col); ?></code> … <?php echo h($snip); ?> …</li><?php endforeach; ?></ul></div>
 <?php endforeach; ?>
 <?php if ($docsActivos > 0): ?>
 <form method="POST" class="card card-body border-warning" onsubmit="return confirm('¿Desactivar los documentos que mencionan a la clínica anterior? No se borran.');">
