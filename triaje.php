@@ -98,19 +98,39 @@ if ($idCitaSel > 0) {
 }
 
 $hoyLista = [];
+$hoyStr    = date('Y-m-d');
+$fechaSel  = $_GET['fecha'] ?? $hoyStr;
+$fd = DateTime::createFromFormat('Y-m-d', $fechaSel);
+if (!$fd || $fd->format('Y-m-d') !== $fechaSel) $fechaSel = $hoyStr;
+$busca     = trim($_GET['q'] ?? '');
+$esHoy     = ($fechaSel === $hoyStr);
+$fPrev     = date('Y-m-d', strtotime($fechaSel . ' -1 day'));
+$fNext     = date('Y-m-d', strtotime($fechaSel . ' +1 day'));
 if (!$cita && !$sinCita) {
-    $q = $conexion->query("SELECT A.IDCITA, A.HORA_INICIO, A.ESTADO_CITA, A.COMENTARIO,
-                                  CONCAT(P.NOMBRES,' ',P.APELLIDOS) AS PACIENTE, P.CEDULA,
-                                  CONCAT(D.NOMBRES,' ',D.APELLIDOS) AS DOCTOR,
-                                  T.IDTRIAJE, T.MOTIVO
-                             FROM AG_CITA A
-                             INNER JOIN AG_PACIENTE P ON P.IDPACIENTE = A.IDPACIENTE
-                             LEFT JOIN ADM_USUARIO D ON D.IDADM_USUARIO = A.IDDOCTOR
-                             LEFT JOIN triaje T ON T.IDCITA = A.IDCITA
-                            WHERE A.ESTADO='A' AND A.FECHA_CITA = CURDATE()
-                              AND A.ESTADO_CITA NOT IN ('Cancelada','Cancelado','Cancelación Tardía','Cancelado por Profesional','No Asistió')
-                            ORDER BY (T.IDTRIAJE IS NOT NULL), A.HORA_INICIO");
-    if ($q) while ($r = $q->fetch_assoc()) $hoyLista[] = $r;
+    // Con búsqueda: cualquier cita desde hace 7 días hasta 90 días adelante; sin búsqueda: la fecha elegida.
+    $sql = "SELECT A.IDCITA, A.FECHA_CITA, A.HORA_INICIO, A.ESTADO_CITA, A.COMENTARIO,
+                   CONCAT(P.NOMBRES,' ',P.APELLIDOS) AS PACIENTE, P.CEDULA,
+                   CONCAT(D.NOMBRES,' ',D.APELLIDOS) AS DOCTOR,
+                   T.IDTRIAJE, T.MOTIVO
+              FROM AG_CITA A
+              INNER JOIN AG_PACIENTE P ON P.IDPACIENTE = A.IDPACIENTE
+              LEFT JOIN ADM_USUARIO D ON D.IDADM_USUARIO = A.IDDOCTOR
+              LEFT JOIN triaje T ON T.IDCITA = A.IDCITA
+             WHERE A.ESTADO='A'
+               AND (A.ESTADO_CITA IS NULL OR A.ESTADO_CITA NOT IN ('Cancelada','Cancelado','Cancelación Tardía','Cancelado por Profesional','No Asistió'))";
+    if ($busca !== '') {
+        $like = '%' . $busca . '%';
+        $sql .= " AND A.FECHA_CITA BETWEEN DATE_SUB(?, INTERVAL 7 DAY) AND DATE_ADD(?, INTERVAL 90 DAY)
+                  AND (P.NOMBRES LIKE ? OR P.APELLIDOS LIKE ? OR P.CEDULA LIKE ? OR CONCAT(P.NOMBRES,' ',P.APELLIDOS) LIKE ?)
+                  ORDER BY A.FECHA_CITA, A.HORA_INICIO";
+        $st = $conexion->prepare($sql);
+        $st->bind_param('ssssss', $hoyStr, $hoyStr, $like, $like, $like, $like);
+    } else {
+        $sql .= " AND A.FECHA_CITA = ? ORDER BY (T.IDTRIAJE IS NOT NULL), A.HORA_INICIO";
+        $st = $conexion->prepare($sql);
+        $st->bind_param('s', $fechaSel);
+    }
+    if ($st && $st->execute()) { $q = $st->get_result(); while ($r = $q->fetch_assoc()) $hoyLista[] = $r; $st->close(); }
 }
 
 $doctores = []; $tipos = [];
@@ -176,11 +196,27 @@ function tv($tri, $k) {
                 </div>
             </div>
             <div class="page-title-actions">
-                <?php if ($cita || $sinCita): ?><a href="triaje.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> <?php echo $en?'Back to today':'Volver a hoy'; ?></a>
+                <?php if ($cita || $sinCita): ?><a href="triaje.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> <?php echo $en?'Back to the list':'Volver a la lista'; ?></a>
                 <?php else: ?><a href="triaje.php?sin_cita=1" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> <?php echo $en?'Patient without appointment':'Paciente sin cita'; ?></a><?php endif; ?>
             </div></div></div>
 
             <?php if ($msg): ?><div class="alert alert-<?php echo h($msg[0]); ?>"><?php echo h($msg[1]); ?></div><?php endif; ?>
+
+<?php if (!$cita && !$sinCita): ?>
+            <form method="GET" class="card shadow-sm mb-3"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+                <a class="btn btn-sm btn-outline-secondary" href="triaje.php?fecha=<?php echo h($fPrev); ?>" title="<?php echo $en?'Previous day':'Día anterior'; ?>"><i class="bi bi-chevron-left"></i></a>
+                <input type="date" name="fecha" value="<?php echo h($fechaSel); ?>" class="form-control form-control-sm" style="max-width:160px;" onchange="this.form.submit()">
+                <a class="btn btn-sm btn-outline-secondary" href="triaje.php?fecha=<?php echo h($fNext); ?>" title="<?php echo $en?'Next day':'Día siguiente'; ?>"><i class="bi bi-chevron-right"></i></a>
+                <a class="btn btn-sm <?php echo $esHoy && $busca === '' ? 'btn-primary' : 'btn-outline-primary'; ?>" href="triaje.php"><?php echo $en?'Today':'Hoy'; ?></a>
+                <input type="text" name="q" value="<?php echo h($busca); ?>" class="form-control form-control-sm ms-md-auto" style="max-width:260px;" placeholder="<?php echo $en?'Search patient (any date)…':'Buscar paciente (cualquier fecha)…'; ?>">
+                <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+                <?php if ($busca !== ''): ?><a class="btn btn-sm btn-link" href="triaje.php"><?php echo $en?'Clear':'Limpiar'; ?></a><?php endif; ?>
+            </div>
+            <div class="px-3 pb-2 small text-muted">
+                <?php if ($busca !== ''): ?><?php echo $en?'Results for':'Resultados para'; ?> “<?php echo h($busca); ?>” — <?php echo $en?'last 7 days to next 90 days':'últimos 7 días y próximos 90 días'; ?>.
+                <?php else: ?><?php echo $en?'Showing':'Mostrando'; ?> <b><?php echo h(date('m/d/Y', strtotime($fechaSel))); ?></b><?php echo $esHoy ? ($en?' (today)':' (hoy)') : ''; ?> · <?php echo $en?'System date':'Fecha del sistema'; ?>: <?php echo h(date('m/d/Y H:i')); ?> (<?php echo h(date_default_timezone_get()); ?>)<?php endif; ?>
+            </div></form>
+<?php endif; ?>
 
 <?php if ($cita): ?>
             <div class="card shadow-sm mb-3"><div class="card-body">
@@ -274,10 +310,11 @@ function tv($tri, $k) {
 <?php else: ?>
             <div class="card shadow-sm"><div class="card-body p-0">
                 <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-                    <thead><tr><th><?php echo $en?'Time':'Hora'; ?></th><th><?php echo $en?'Patient':'Paciente'; ?></th><th><?php echo $en?'Professional':'Profesional'; ?></th><th><?php echo $en?'Reason':'Motivo'; ?></th><th><?php echo $en?'Status':'Estado'; ?></th><th></th></tr></thead>
+                    <thead><tr><?php if ($busca !== ''): ?><th><?php echo $en?'Date':'Fecha'; ?></th><?php endif; ?><th><?php echo $en?'Time':'Hora'; ?></th><th><?php echo $en?'Patient':'Paciente'; ?></th><th><?php echo $en?'Professional':'Profesional'; ?></th><th><?php echo $en?'Reason':'Motivo'; ?></th><th><?php echo $en?'Status':'Estado'; ?></th><th></th></tr></thead>
                     <tbody>
                     <?php foreach ($hoyLista as $r): $hecho = $r['IDTRIAJE'] !== null; ?>
                         <tr>
+                            <?php if ($busca !== ''): ?><td><?php echo h(date('m/d/Y', strtotime($r['FECHA_CITA']))); ?></td><?php endif; ?>
                             <td><?php echo h(substr($r['HORA_INICIO'],0,5)); ?></td>
                             <td><b><?php echo h($r['PACIENTE']); ?></b><div class="small text-muted"><?php echo h($r['CEDULA']); ?></div></td>
                             <td><?php echo h($r['DOCTOR']); ?></td>
@@ -286,7 +323,7 @@ function tv($tri, $k) {
                             <td class="text-end"><a class="btn btn-sm <?php echo $hecho?'btn-outline-primary':'btn-primary'; ?>" href="triaje.php?idCita=<?php echo (int)$r['IDCITA']; ?>"><?php echo $hecho ? ($en?'Edit':'Editar') : ($en?'Record triage':'Registrar triaje'); ?></a></td>
                         </tr>
                     <?php endforeach; if (!$hoyLista): ?>
-                        <tr><td colspan="6" class="text-center text-muted py-4"><?php echo $en?'No appointments for today.':'No hay citas para hoy.'; ?></td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4"><?php echo $en?'No appointments for this date.':'No hay citas para esta fecha.'; ?></td></tr>
                     <?php endif; ?>
                     </tbody></table></div>
             </div></div>
