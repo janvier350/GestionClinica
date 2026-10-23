@@ -347,6 +347,11 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </a>
             </li>
             <li>
+                <a href="modulos_config.php" class="<?php echo menuActivo('modulos_config.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-toggles"></i> <?php echo (current_lang()==='en'?'Modules':'Módulos'); ?>
+                </a>
+            </li>
+            <li>
                 <a href="zona_horaria.php" class="<?php echo menuActivo('zona_horaria.php', $paginaActual); ?>">
                     <i class="metismenu-icon bi bi-clock-history"></i> <?php echo (current_lang()==='en'?'Time zone':'Zona horaria'); ?>
                 </a>
@@ -365,12 +370,14 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
             <?php endif; ?>
 
             <!-- ══ SOLICITUDES / TICKETS (todos los roles) ═══════════ -->
+            <?php if (modulo_activo('tickets')): ?>
             <li class="app-sidebar__heading"><?php echo (current_lang()==='en'?'Support':'Soporte'); ?></li>
             <li>
                 <a href="tickets.php" class="<?php echo menuActivo('tickets.php', $paginaActual); ?>">
                     <i class="metismenu-icon bi bi-ticket-detailed"></i> <?php echo (current_lang()==='en'?'Requests / Tickets':'Solicitudes / Tickets'); ?>
                 </a>
             </li>
+            <?php endif; ?>
 
             <!-- ══ AYUDA (todos los roles) ═══════════════════════════ -->
             <li class="app-sidebar__heading"><?php te('help.centerTitle'); ?></li>

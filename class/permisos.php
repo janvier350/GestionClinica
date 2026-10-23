@@ -15,6 +15,7 @@
  * SISTEMA (Admin) siempre tiene acceso (no puede bloquearse a sí mismo).
  */
 require_once(__DIR__ . '/conexionBD.php');
+require_once(__DIR__ . '/modulos.php');   // feature flags por instalación
 
 /** Catálogo de módulos gestionables: key => [etiqueta, grupo, defaults por rol]. */
 function permisos_catalogo() {
@@ -89,6 +90,9 @@ function permisos_overrides($idUser) {
 /** Permiso efectivo para un usuario+rol sobre un módulo. */
 function puede_usuario($idUser, $rol, $key) {
     $rol = strtoupper((string)$rol);
+    // Módulo apagado en esta instalación (class/modulos.php): bloquea a todos, SISTEMA incluido.
+    $mod = modulo_de_permiso($key);
+    if ($mod !== null && !modulo_activo($mod)) return false;
     if ($rol === 'SISTEMA') return true;   // Admin siempre (no puede quedarse sin acceso)
     $cat = permisos_catalogo();
     if (!isset($cat[$key])) return false;

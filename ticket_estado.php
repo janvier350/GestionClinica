@@ -7,6 +7,7 @@ session_start();
 require_once("class/funciones.php");
 require_once("class/conexionBD.php");
 require_once(__DIR__ . "/class/permisos.php");
+if (!modulo_activo('tickets')) { http_response_code(403); exit('Módulo desactivado'); }
 require_once(__DIR__ . "/class/tickets.php");
 require_once(__DIR__ . "/class/auditoria.php");
 $conexion = conectarse();

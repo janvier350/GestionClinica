@@ -10,6 +10,7 @@ require_once("class/funciones.php");
 require_once("class/conexionBD.php");
 require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/permisos.php");
+requerir_modulo('tickets');
 require_once(__DIR__ . "/class/tickets.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
