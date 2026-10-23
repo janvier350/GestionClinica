@@ -122,3 +122,49 @@ function modulo_guardar($conexion, $key, $activo) {
     modulos_guardados(true);
     return $ok;
 }
+
+/* ───────── Reglas de negocio configurables por instalación (app_config 'regla.*') ─────────
+ * Valor por defecto = comportamiento histórico (regla activa), para no alterar otras instalaciones. */
+function reglas_catalogo() {
+    return [
+        'cita_icd10'     => ['Exigir diagnóstico (ICD-10) para agendar', 'Require a diagnosis (ICD-10) to schedule',
+                             'El paciente debe tener al menos un diagnóstico ICD-10 antes de agendarle una cita.',
+                             'The patient must have at least one ICD-10 diagnosis before an appointment can be scheduled.', true],
+        'cita_direccion' => ['Exigir dirección del paciente para agendar', 'Require patient address to schedule',
+                             'El paciente debe tener dirección (calle, o ciudad y estado) antes de agendarle una cita.',
+                             'The patient must have an address (street, or city and state) before an appointment can be scheduled.', true],
+    ];
+}
+
+function reglas_guardadas($recargar = false) {
+    static $cache = null;
+    if ($cache !== null && !$recargar) return $cache;
+    $cache = [];
+    $c = function_exists('_permisos_conn') ? _permisos_conn() : conectarse();
+    if ($c) {
+        $rs = @$c->query("SELECT clave, valor FROM app_config WHERE clave LIKE 'regla.%'");
+        if ($rs) while ($r = $rs->fetch_assoc()) $cache[substr($r['clave'], 6)] = ((string)$r['valor'] === '1') ? 1 : 0;
+    }
+    return $cache;
+}
+
+/** ¿Está activa la regla? Regla desconocida => true (no relaja nada por accidente). */
+function regla_activa($key) {
+    $cat = reglas_catalogo();
+    if (!isset($cat[$key])) return true;
+    $g = reglas_guardadas();
+    return array_key_exists($key, $g) ? ($g[$key] === 1) : (bool)$cat[$key][4];
+}
+
+function regla_guardar($conexion, $key, $activa) {
+    if (!isset(reglas_catalogo()[$key])) return false;
+    @$conexion->query("CREATE TABLE IF NOT EXISTS app_config (
+        clave VARCHAR(60) NOT NULL PRIMARY KEY, valor VARCHAR(190) NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $clave = 'regla.' . $key; $v = $activa ? '1' : '0';
+    $st = $conexion->prepare("INSERT INTO app_config (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor=VALUES(valor), updated_at=NOW()");
+    if (!$st) return false;
+    $st->bind_param('ss', $clave, $v); $ok = $st->execute(); $st->close();
+    reglas_guardadas(true);
+    return $ok;
+}

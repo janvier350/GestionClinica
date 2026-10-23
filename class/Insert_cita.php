@@ -3,6 +3,7 @@ require_once("funciones.php");
 require_once("conexionBD.php");
 require_once("email_cita.php");
 require_once(__DIR__ . "/auditoria.php");
+require_once(__DIR__ . "/modulos.php");
 $conexion = conectarse();
 session_start();
 
@@ -65,8 +66,8 @@ $dirCompleta = ($dir !== '') || ($city !== '' && $state !== '');
 @require_once(__DIR__ . '/../lang/i18n.php');
 $en = (function_exists('current_lang') && current_lang() === 'en');
 $faltantes = [];
-if ($numDiag === 0)  $faltantes[] = $en ? 'a diagnosis (ICD-10)' : 'un diagnóstico (ICD-10)';
-if (!$dirCompleta)   $faltantes[] = $en ? 'the address (street, or city and state)' : 'la dirección (calle o ciudad y estado)';
+if ($numDiag === 0 && regla_activa('cita_icd10'))     $faltantes[] = $en ? 'a diagnosis (ICD-10)' : 'un diagnóstico (ICD-10)';
+if (!$dirCompleta && regla_activa('cita_direccion')) $faltantes[] = $en ? 'the address (street, or city and state)' : 'la dirección (calle o ciudad y estado)';
 if ($faltantes) {
     if ($en) {
         $msg = "Cannot schedule: the patient is missing ".implode(' and ', $faltantes).

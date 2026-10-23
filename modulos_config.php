@@ -35,6 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             else $fallo = true;
         }
     }
+    // Reglas de negocio (interruptores)
+    foreach (reglas_catalogo() as $rk => $r) {
+        $antesR = regla_activa($rk); $nuevoR = isset($_POST['regla'][$rk]);
+        if ($nuevoR !== $antesR) {
+            if (regla_guardar($conexion, $rk, $nuevoR)) $cambios[] = 'regla.'.$rk.($nuevoR ? ' ON' : ' OFF'); else $fallo = true;
+        }
+    }
     if ($cambios) auditar($conexion, 'Configuración', 'editar', 'CONFIG', null, 'Módulos: '.implode(', ', $cambios));
     if ($fallo)         { $msg = $en ? 'Some changes could not be saved.' : 'No se pudieron guardar algunos cambios.'; $msgTipo = 'danger'; }
     elseif ($cambios)   { $msg = $en ? 'Modules updated.' : 'Módulos actualizados.'; $msgTipo = 'success'; }
@@ -108,6 +115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input class="form-check-input" type="checkbox" role="switch" name="mod[<?php echo h($k); ?>]" value="1"
                                    <?php echo modulo_activo($k) ? 'checked' : ''; ?> <?php echo $disp ? '' : 'disabled'; ?>>
                         </div>
+                    </li>
+                <?php endforeach; ?>
+                </ul>
+                <h6 class="mt-4 mb-1"><?php echo $en?'Scheduling rules':'Reglas al agendar'; ?></h6>
+                <ul class="list-group list-group-flush">
+                <?php foreach (reglas_catalogo() as $rk => $r): ?>
+                    <li class="list-group-item d-flex align-items-start justify-content-between gap-3 px-0">
+                        <div><div class="fw-semibold"><?php echo h($en ? $r[1] : $r[0]); ?></div>
+                            <div class="small text-muted"><?php echo h($en ? $r[3] : $r[2]); ?></div></div>
+                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" name="regla[<?php echo h($rk); ?>]" value="1" <?php echo regla_activa($rk) ? 'checked' : ''; ?>></div>
                     </li>
                 <?php endforeach; ?>
                 </ul>
