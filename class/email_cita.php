@@ -14,6 +14,7 @@
  *   $e['subject'], $e['html'], $e['text'], $e['fromName'], $e['replyName']
  */
 require_once(__DIR__ . '/../lang/i18n.php');
+require_once(__DIR__ . '/mailer.php');   // marca, remitente y pie configurables
 
 if (!function_exists('patient_lang')) {
     // Idioma preferido del paciente ('en'|'es'); por defecto 'es'.
@@ -115,7 +116,7 @@ if (!function_exists('build_cita_email')) {
 
         $title = tl($lang, "email.$tipo.title");
         $intro = tl($lang, "email.$tipo.intro");
-        $brand = tl($lang, 'email.brand');
+        $brand = mail_brand();
 
         $html = "<!DOCTYPE html>
 <html lang='" . $lang . "'>
@@ -149,7 +150,7 @@ if (!function_exists('build_cita_email')) {
         " . $noteHtml . "
         <tr>
           <td style='background:#eef2f7;padding:16px 32px;text-align:center;'>
-            <p style='margin:0;font-size:12px;color:#999;'>" . tl($lang, 'email.footer') . "</p>
+            <p style='margin:0;font-size:12px;color:#999;'>" . (mail_footer($lang) ?? tl($lang, 'email.footer')) . "</p>
           </td>
         </tr>
       </table>
@@ -169,14 +170,14 @@ if (!function_exists('build_cita_email')) {
             $text .= "\n(" . tl($lang, 'email.prevDate') . " " . fecha_bonita_lang($fechaAnt, $lang) . " " . tl($lang, 'email.at') . " $horaAnt)\n";
         }
         if ($c['note']) $text .= "\n" . tl($lang, $c['note']) . "\n";
-        $text .= "\n" . tl($lang, 'email.brand');
+        $text .= "\n" . mail_brand();
 
         return array(
             'subject'   => tl($lang, "email.$tipo.subject"),
             'html'      => $html,
             'text'      => $text,
-            'fromName'  => tl($lang, 'email.fromName'),
-            'replyName' => tl($lang, 'email.replyName'),
+            'fromName'  => mail_from_name(),
+            'replyName' => mail_reply_name(),
         );
     }
 }

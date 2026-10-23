@@ -292,26 +292,9 @@ $textBody = $emailCita['text'];
 
 $mail = new PHPMailer(true);
 try {
-    $mail->isSMTP();
-    $mail->Host       = 'mail.srossnutritions.com';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = 'citamedica@srossnutritions.com';
-    $mail->Password   = 'QVseUdgYE7TAGRF6bUQf';
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-    $mail->CharSet    = 'UTF-8';
-    $mail->Encoding   = 'base64';
+    mailer_configurar($mail);   // SMTP + remitente desde Panel de Control → Correo
 
-    // Permite certificados SSL auto-firmados en hosting compartido
-    $mail->SMTPOptions = ['ssl' => [
-        'verify_peer'       => false,
-        'verify_peer_name'  => false,
-        'allow_self_signed' => true,
-    ]];
-
-    $mail->setFrom('citamedica@srossnutritions.com', $emailCita['fromName']);
     $mail->addAddress($correoPaciente, $nombrePaciente);
-    $mail->addReplyTo('citamedica@srossnutritions.com', $emailCita['replyName']);
 
     $mail->isHTML(true);
     $mail->Subject  = '=?UTF-8?B?' . base64_encode($emailCita['subject']) . '?=';

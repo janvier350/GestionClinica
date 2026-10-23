@@ -366,6 +366,11 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </a>
             </li>
             <li>
+                <a href="mail_config.php" class="<?php echo menuActivo('mail_config.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-envelope-at"></i> <?php echo (current_lang()==='en'?'Email settings':'Correo'); ?>
+                </a>
+            </li>
+            <li>
                 <a href="zona_horaria.php" class="<?php echo menuActivo('zona_horaria.php', $paginaActual); ?>">
                     <i class="metismenu-icon bi bi-clock-history"></i> <?php echo (current_lang()==='en'?'Time zone':'Zona horaria'); ?>
                 </a>

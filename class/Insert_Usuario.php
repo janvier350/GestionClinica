@@ -1,6 +1,7 @@
 <?php
 require_once("funciones.php");
 require_once("conexionBD.php");
+require_once(__DIR__ . "/mailer.php");
 $conexion = conectarse();
 session_start();
 
@@ -96,6 +97,8 @@ $appUrl  = $scheme . '://' . $host . $appDir . '/index.php';
 
 $nombreCompleto = trim($nombres . ' ' . $apellidos);
 
+$brand  = mail_brand();
+$brandH = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 $htmlBody = "
 <!DOCTYPE html>
 <html lang='es'>
@@ -109,7 +112,7 @@ $htmlBody = "
         <tr>
           <td style='background:#5a2d82;padding:28px 32px;text-align:center;'>
             <h1 style='color:#ffffff;margin:0;font-size:22px;'>¡Bienvenido/a!</h1>
-            <p style='color:#e0c8f8;margin:6px 0 0;font-size:13px;'>Sross Nutritions</p>
+            <p style='color:#e0c8f8;margin:6px 0 0;font-size:13px;'>{$brandH}</p>
           </td>
         </tr>
 
@@ -120,7 +123,7 @@ $htmlBody = "
               Hola, <strong>" . htmlspecialchars($nombreCompleto) . "</strong>
             </p>
             <p style='font-size:14px;color:#555;margin:10px 0 0;'>
-              Se ha creado tu cuenta en el Sistema de Citas de Sross Nutritions. Ya puedes ingresar con estos datos:
+              Se ha creado tu cuenta en el Sistema de Citas de {$brandH}. Ya puedes ingresar con estos datos:
             </p>
           </td>
         </tr>
@@ -185,7 +188,7 @@ $htmlBody = "
         <tr>
           <td style='background:#f0e8fa;padding:16px 32px;text-align:center;'>
             <p style='margin:0;font-size:12px;color:#999;'>
-              Este correo fue generado automáticamente por el Sistema de Citas Sross Nutritions.<br>
+              Este correo fue generado automáticamente por el Sistema de Citas {$brandH}.<br>
               Por favor no responda a este mensaje.
             </p>
           </td>
@@ -198,37 +201,22 @@ $htmlBody = "
 </html>";
 
 $textBody = "Hola $nombreCompleto,\n\n"
-          . "Se ha creado tu cuenta en el Sistema de Citas de Sross Nutritions.\n"
+          . "Se ha creado tu cuenta en el Sistema de Citas de $brand.\n"
           . "Usuario: $usuario\n"
           . "Contraseña: $clave\n"
           . ($rolNombre ? "Rol: $rolNombre\n" : "")
           . "\nIngresa aquí: $appUrl\n"
-          . "\nPor seguridad, cambia tu contraseña tras el primer ingreso.\nSross Nutritions";
+          . "\nPor seguridad, cambia tu contraseña tras el primer ingreso.\n$brand";
 
 $mail = new PHPMailer(true);
 try {
-    $mail->isSMTP();
-    $mail->Host       = 'mail.srossnutritions.com';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = 'citamedica@srossnutritions.com';
-    $mail->Password   = 'QVseUdgYE7TAGRF6bUQf';
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-    $mail->CharSet    = 'UTF-8';
-    $mail->Encoding   = 'base64';
+    mailer_configurar($mail);   // SMTP + remitente desde Panel de Control → Correo
 
-    $mail->SMTPOptions = ['ssl' => [
-        'verify_peer'       => false,
-        'verify_peer_name'  => false,
-        'allow_self_signed' => true,
-    ]];
 
-    $mail->setFrom('citamedica@srossnutritions.com', 'Sistema de Citas SROSS');
     $mail->addAddress($correo, $nombreCompleto);
-    $mail->addReplyTo('citamedica@srossnutritions.com', 'Sross Nutritions');
 
     $mail->isHTML(true);
-    $mail->Subject  = '=?UTF-8?B?' . base64_encode('Bienvenido a Sross Nutritions') . '?=';
+    $mail->Subject  = '=?UTF-8?B?' . base64_encode('Bienvenido a ' . $brand) . '?=';
     $mail->Body     = $htmlBody;
     $mail->AltBody  = $textBody;
 

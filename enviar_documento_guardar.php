@@ -3,6 +3,7 @@ session_start();
 date_default_timezone_set('America/New_York');
 require_once("class/funciones.php");
 require_once("class/conexionBD.php");
+require_once(__DIR__ . "/class/mailer.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -65,11 +66,13 @@ $base   = $scheme . '://' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRI
 $link   = $base . '/firmar.php?t=' . $token;
 
 // ── Enviar correo ────────────────────────────────────────────────────
+$brand  = mail_brand();
+$brandH = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
 $htmlBody = "
 <div style='font-family:Arial,sans-serif;max-width:560px;margin:auto;'>
   <div style='background:#5a2d82;color:#fff;padding:22px;border-radius:8px 8px 0 0;text-align:center;'>
     <h2 style='margin:0;'>Documento para firmar</h2>
-    <p style='margin:6px 0 0;color:#e0c8f8;'>Sross Nutritions</p>
+    <p style='margin:6px 0 0;color:#e0c8f8;'>{$brandH}</p>
   </div>
   <div style='border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 8px 8px;'>
     <p>Hola, <strong>" . htmlspecialchars($nombrePac) . "</strong>:</p>
@@ -86,25 +89,15 @@ $htmlBody = "
 </div>";
 
 $textBody = "Hola $nombrePac,\n\nTienes un documento para firmar: " . $doc['titulo'] . "\n\n"
-          . "Ábrelo aquí: $link\nCódigo de acceso: $codigo\n\nSross Nutritions";
+          . "Ábrelo aquí: $link\nCódigo de acceso: $codigo\n\n$brand";
 
 $mail = new PHPMailer(true);
 try {
-    $mail->isSMTP();
-    $mail->Host       = 'mail.srossnutritions.com';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = 'citamedica@srossnutritions.com';
-    $mail->Password   = 'QVseUdgYE7TAGRF6bUQf';
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-    $mail->CharSet    = 'UTF-8';
-    $mail->SMTPOptions = ['ssl' => ['verify_peer'=>false,'verify_peer_name'=>false,'allow_self_signed'=>true]];
+    mailer_configurar($mail);   // SMTP + remitente desde Panel de Control → Correo
 
-    $mail->setFrom('citamedica@srossnutritions.com', 'Sross Nutritions');
     $mail->addAddress($correo, $nombrePac);
-    $mail->addReplyTo('citamedica@srossnutritions.com', 'Sross Nutritions');
     $mail->isHTML(true);
-    $mail->Subject = '=?UTF-8?B?' . base64_encode('Documento para firmar - Sross Nutritions') . '?=';
+    $mail->Subject = '=?UTF-8?B?' . base64_encode('Documento para firmar - ' . $brand) . '?=';
     $mail->Body    = $htmlBody;
     $mail->AltBody = $textBody;
     $mail->send();

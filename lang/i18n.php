@@ -42,7 +42,16 @@ if (!function_exists('tl')) {
     // Traducción en un idioma ESPECÍFICO (para correos en el idioma del paciente).
     function tl($lang, $key, $default = null) {
         $dict = _i18n_load($lang);
-        if (array_key_exists($key, $dict)) return $dict[$key];
+        if (array_key_exists($key, $dict)) {
+            $v = $dict[$key];
+            // {brand}: nombre de la clínica configurado en Panel de Control → Correo
+            if (is_string($v) && strpos($v, '{brand}') !== false) {
+                require_once(__DIR__ . '/../class/mailer.php');
+                $b = ($key === 'email.footer') ? htmlspecialchars(mail_brand(), ENT_QUOTES, 'UTF-8') : mail_brand();   // solo el pie es HTML
+                $v = str_replace('{brand}', $b, $v);
+            }
+            return $v;
+        }
         return ($default !== null) ? $default : $key;
     }
 }
