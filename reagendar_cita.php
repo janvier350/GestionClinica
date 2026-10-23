@@ -35,8 +35,8 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !preg_match('/^\d{2}:\d{2}$/
     exit;
 }
 
-// Hora fin = 30 minutos después
-$horaFin = date('H:i', strtotime($hora) + 30 * 60);
+// Hora fin = 1 hora después (toda cita dura 1 hora, como Kalix)
+$horaFin = date('H:i', strtotime($hora) + 60 * 60);
 
 // ¿Existe la columna IDSERIE? (para saber si podemos aplicar a toda la serie futura)
 $dbName = $conexion->query("SELECT DATABASE() AS db")->fetch_assoc()['db'];

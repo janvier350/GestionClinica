@@ -1505,8 +1505,8 @@ async function eliminarCita() {
 // ── Editar Paciente desde el modal de Gestión de Cita ────────────────
 let epModal = null;
 
-function editarPacienteDesdeCita() {
-    const idPaciente = citaActual ? citaActual.idpaciente : null;
+// Abre el modal de edición del paciente por su ID (desde una cita o el buscador).
+function editarPacientePorId(idPaciente) {
     if (!idPaciente) { alert(TC.noPatientId); return; }
 
     if (!epModal) epModal = new bootstrap.Modal(document.getElementById('modalEditarPaciente'));
@@ -1539,10 +1539,12 @@ function editarPacienteDesdeCita() {
             // Teléfonos/correos adicionales del paciente
             cargarContactos(idPaciente);
 
-            // Ocultar el modal de cita para que no se monten los backdrops
-            const evtModalEl = document.getElementById('eventModal');
-            const evtModal   = bootstrap.Modal.getInstance(evtModalEl);
-            if (evtModal) evtModal.hide();
+            // Ocultar otros modales abiertos (cita / historial del buscador) para
+            // que no se monten los backdrops.
+            ['eventModal','mnuModalHistorial'].forEach(function(mid){
+                var el = document.getElementById(mid);
+                if (el) { var inst = bootstrap.Modal.getInstance(el); if (inst) inst.hide(); }
+            });
 
             epModal.show();
         })
@@ -1550,6 +1552,12 @@ function editarPacienteDesdeCita() {
             alert(TC.loadHttp + xhr.status + ').');
         });
 }
+// Compatibilidad: el botón "Editar paciente" dentro de la cita.
+function editarPacienteDesdeCita() {
+    editarPacientePorId(citaActual ? citaActual.idpaciente : null);
+}
+// Disponible para el buscador global (menú) y el del calendario.
+window.editarPacientePorId = editarPacientePorId;
 
 function guardarPacienteCita() {
     const nombres   = document.getElementById('epNombres').value.trim();
@@ -2565,7 +2573,11 @@ function confirmarRecurrencia() {
     let timer = null, items = [], activeIdx = -1;
 
     function hide(){ box.classList.add('d-none'); box.innerHTML=''; items=[]; activeIdx=-1; }
-    function irA(id){ window.location.href = 'historial_atenciones.php?id=' + encodeURIComponent(id); }
+    function irA(id){
+        // Abre la ficha del paciente en un modal editable, sobre el calendario.
+        if (typeof window.editarPacientePorId === 'function') { window.editarPacientePorId(id); }
+        else { window.location.href = 'pacientes_crud.php?id=' + encodeURIComponent(id); }
+    }
     function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
     function render(data){

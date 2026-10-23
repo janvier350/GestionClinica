@@ -45,8 +45,8 @@ if ($hora < '07:00' || $hora > '22:30') {
     exit;
 }
 
-// Hora fin = 30 minutos después
-$horaFin = date('H:i', strtotime($hora) + 30 * 60);
+// Hora fin = 1 hora después (toda cita dura 1 hora, como Kalix)
+$horaFin = date('H:i', strtotime($hora) + 60 * 60);
 
 // Verificar que la cita no se solape con otra cita activa DEL MISMO DOCTOR el
 // mismo día (excluyendo esta misma cita). Al permitir minutos libres, dos

@@ -551,6 +551,8 @@ function editarPaciente(idPaciente) {
             alert(T.loadHttp + xhr.status + ').');
         });
 }
+// Disponible para el botón "Editar paciente" del buscador global.
+window.editarPacientePorId = editarPaciente;
 
 function guardarPaciente() {
     const nombres   = document.getElementById('epNombres').value.trim();

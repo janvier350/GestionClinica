@@ -482,6 +482,9 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                 </div>
             </div>
             <div class="modal-footer py-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="mnuEditarPaciente()">
+                    <i class="bi bi-pencil-square me-1"></i><?php echo (current_lang()==='en'?'Edit patient':'Editar paciente'); ?>
+                </button>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"><?php te('common.close'); ?></button>
             </div>
         </div>
@@ -554,6 +557,8 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
 
 // Abre el modal de detalle del paciente (agenda, informes, documentos).
 window.mnuVerHistorialPaciente = function (idPaciente, nombre) {
+    window._mnuPacienteId = idPaciente;        // para el botón "Editar paciente"
+    window._mnuPacienteNombre = nombre || '';
     var body = document.getElementById('mnuModalHistorialBody');
     document.getElementById('mnuModalPacienteNombre').textContent = nombre || '';
     if (body) {
@@ -570,6 +575,20 @@ window.mnuVerHistorialPaciente = function (idPaciente, nombre) {
             .then(function(r){ return r.text(); })
             .then(function(html){ body.innerHTML = html; })
             .catch(function(){ body.innerHTML = '<div class="alert alert-danger m-3">' + MNU_TXT.historyErrPre + '?' + MNU_TXT.historyErrTail + '</div>'; });
+    }
+};
+
+// Botón "Editar paciente" del modal de búsqueda: abre el editor en un modal
+// sobre la misma pantalla si existe; si no, lleva a Administrar pacientes.
+window.mnuEditarPaciente = function () {
+    var id = window._mnuPacienteId;
+    if (!id) return;
+    if (typeof window.editarPacientePorId === 'function') {
+        var hm = document.getElementById('mnuModalHistorial');
+        if (hm) { var inst = bootstrap.Modal.getInstance(hm); if (inst) inst.hide(); }
+        window.editarPacientePorId(id);
+    } else {
+        window.location.href = 'pacientes_crud.php?id=' + encodeURIComponent(id);
     }
 };
 

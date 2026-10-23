@@ -566,6 +566,12 @@ function editarPaciente(id) {
         })
         .fail(function(xhr){ alert(T.loadHttp + xhr.status + ').'); });
 }
+// Disponible para el buscador global y auto-apertura con ?id=
+window.editarPacientePorId = editarPaciente;
+document.addEventListener('DOMContentLoaded', function(){
+    var m = (location.search.match(/[?&]id=(\d+)/));
+    if (m) { try { editarPaciente(parseInt(m[1],10)); } catch(e){} }
+});
 
 // ── Contactos adicionales (teléfonos / correos extra) ────────────────
 function _ctEsc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

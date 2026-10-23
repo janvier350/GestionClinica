@@ -79,8 +79,8 @@ if ($faltantes) {
     exit;
 }
 
-// Calcular hora final (+30 min)
-$timeFin = date("H:i", strtotime($timeIni) + 30 * 60);
+// Calcular hora final (+1 hora): toda cita dura 1 hora (como Kalix)
+$timeFin = date("H:i", strtotime($timeIni) + 60 * 60);
 
 /**
  * Genera todas las fechas de la serie (incluida la primera).
