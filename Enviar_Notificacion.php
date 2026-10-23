@@ -2,6 +2,7 @@
 session_start();
 require_once("class/funciones.php");
 require_once("class/conexionBD.php");
+require_once(__DIR__ . "/class/ui.php");
 require_once(__DIR__ . "/lang/i18n.php");
 $conexion=conectarse();
 if (!isset($_SESSION["rol"])) {
@@ -393,12 +394,7 @@ requerir('agenda.notificacion');
                                             <tr>
                                               <td>
                                                 <div class="d-flex align-items-center">
-                                                  <img
-                                                      src="https://mdbootstrap.com/img/new/avatars/8.jpg"
-                                                      alt=""
-                                                      style="width: 45px; height: 45px"
-                                                      class="rounded-circle"
-                                                      />
+                                                  <?php echo avatar_iniciales($valores['NOMBRES'], $valores['APELLIDOS']); ?>
                                                   <div class="ms-3">
                                                     <p class="fw-bold mb-1"><?php echo $valores['NOMBRES'] . " " . $valores['APELLIDOS']; ?></p> 
                                                     <p class="text-muted mb-0"></p>

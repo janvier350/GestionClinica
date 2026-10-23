@@ -387,7 +387,7 @@ function _rellenarDemo(html){
         doctor_nombre: 'Silvia Ross', apellido_doctor: 'Ross', titulo_doctor: 'Dr.', especialidad: '',
         firma_nombre: 'Silvia Ross', firma_credenciales: 'NPI: 1234567890 · License ID: 000000-1',
         firma_npi: '1234567890', firma_licencia: '000000-1', firma_imagen: '',
-        practica_nombre: 'Sross Nutritions', direccion_1: '123 Main St', direccion_2: '', ciudad: 'Miami', estado: 'FL', codigo_postal: '33101',
+        practica_nombre: "L'Chaim", direccion_1: '123 Main St', direccion_2: '', ciudad: 'Miami', estado: 'FL', codigo_postal: '33101',
         telefono_clinica: '(305) 000-0000', tipo_consulta: 'Follow-up', diagnostico_referencia: 'Type 2 Diabetes',
         peso: '70 kg', talla: '170 cm', imc: '24.2',
         antropometria: 'Weight: 70 kg, Height: 170 cm, BMI: 24.2',

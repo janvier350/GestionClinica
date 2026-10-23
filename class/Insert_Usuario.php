@@ -21,7 +21,7 @@ $Idrol     = (int)($_POST['Idrol']    ?? 0);
 $usuario   = trim($_POST['usuario']   ?? '');
 $clave     = $_POST['clave']          ?? '';
 $idAgencia = 1;
-$imagen    = 'https://mdbootstrap.com/img/new/avatars/8.jpg';
+$imagen    = '';   // sin foto: la lista muestra las iniciales
 
 if ($nombres === '' || $apellidos === '' || $usuario === '' || $clave === '' || !$Idrol) {
     echo "<script>alert('Datos incompletos. Complete todos los campos.'); window.location.href = '../PNC_UsuarioCrear.php';</script>";

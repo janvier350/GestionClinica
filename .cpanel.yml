@@ -1,12 +1,13 @@
 ---
 # Despliegue desde cPanel (Git Version Control → Deploy HEAD Commit).
 # El repo vive FUERA de public_html (/home/overcloc/GestionClinica) y solo se
-# publica el código en DEPLOYPATH. Ajusta DEPLOYPATH a la carpeta web de L'CHAIN.
+# publica el código en DEPLOYPATH. DEPLOYPATH es la carpeta WEB donde se copia el código (la que se abre en el navegador,
+# p. ej. https://overclocking.com.ec/GestionClinica/). Si cambias de carpeta, cambia solo esa línea.
 # No se tocan config.local.php ni los adjuntos/documentos subidos por la clínica.
 # Se excluyen copias antiguas de pantallas, páginas demo de la plantilla y archivos de trabajo.
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/overcloc/public_html/lchain/
+    - export DEPLOYPATH=/home/overcloc/public_html/GestionClinica/
     - /bin/mkdir -p $DEPLOYPATH
     - /usr/bin/rsync -rlptD --exclude='.git' --exclude='.github' --exclude='.cpanel.yml' --exclude='config.local.php' --exclude='error_log' --exclude='documentos_pacientes/*' --exclude='tickets_adjuntos/*' --exclude='__MACOSX' --exclude='*.zip' --exclude='*.md' --exclude='/*.html' --exclude='/html' --exclude='/examples' --exclude='/class_' --exclude='/HealthSchedule' --exclude='/Proyectos' --exclude='Imagen pegada*' --exclude='.DS_Store' --exclude='*BCK.php' --exclude='*OLD.php' --exclude='*old.php' --exclude='*2026.php' --exclude='*2206.php' --exclude='Homeant.php' --exclude='home1.php' --exclude='index3.php' --exclude='atencion_pacientedfgbfdgh.php' --exclude='diag_*.php' ./ $DEPLOYPATH
     - /bin/mkdir -p $DEPLOYPATH/documentos_pacientes $DEPLOYPATH/tickets_adjuntos
