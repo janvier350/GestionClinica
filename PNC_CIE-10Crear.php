@@ -30,11 +30,13 @@ $where = [];
 $params = [];
 $types  = '';
 if ($q !== '') {
-    $where[] = "(CODIGO LIKE CONCAT('%', ?, '%') OR DESCRIPCION LIKE CONCAT('%', ?, '%'))";
+    // Calificar con E. porque ambas tablas (E y C) tienen CODIGO/DESCRIPCION:
+    // sin el alias, MySQL devuelve "columna ambigua" y la página daba error 500.
+    $where[] = "(E.CODIGO LIKE CONCAT('%', ?, '%') OR E.DESCRIPCION LIKE CONCAT('%', ?, '%'))";
     $params[] = $q; $params[] = $q; $types .= 'ss';
 }
 if ($catFiltro !== '' && ctype_digit($catFiltro)) {
-    $where[] = "ID_ENFERMEDAD = ?";
+    $where[] = "E.ID_ENFERMEDAD = ?";
     $params[] = (int)$catFiltro; $types .= 'i';
 }
 $sqlList = "SELECT E.ID_ENFE_DIAG_COD, E.ID_ENFERMEDAD, E.CODIGO, E.DESCRIPCION,
@@ -45,9 +47,13 @@ $sqlList = "SELECT E.ID_ENFE_DIAG_COD, E.ID_ENFERMEDAD, E.CODIGO, E.DESCRIPCION,
          . "\n         ORDER BY E.ID_ENFE_DIAG_COD DESC";
 if ($types !== '') {
     $stmt = $conexion->prepare($sqlList);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $resList = $stmt->get_result();
+    if ($stmt) {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $resList = $stmt->get_result();
+    } else {
+        $resList = false;   // evita un fatal si la consulta falla
+    }
 } else {
     $resList = $conexion->query($sqlList);
 }
