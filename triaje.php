@@ -15,6 +15,7 @@ require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/triaje.php");
+require_once(__DIR__ . "/class/pacientes_util.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -57,30 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'sin_c
     $err = '';
     if ($idDoc <= 0 || $idTipo <= 0) $err = $en ? 'Choose the professional and the visit type.' : 'Elige el profesional y el tipo de consulta.';
     if (!$err && $idPac <= 0) {                       // paciente nuevo, datos mínimos
-        $nom = trim($_POST['nombres'] ?? ''); $ape = trim($_POST['apellidos'] ?? '');
-        $ced = trim($_POST['cedula'] ?? '');  $tel = trim($_POST['telefono'] ?? '');
-        $fn  = trim($_POST['feNac'] ?? '');   $sex = ($_POST['sex'] ?? '') === 'Fame' ? 'Fame' : 'Male';
-        if ($nom === '' || $ape === '' || $fn === '') {
-            $err = $en ? 'New patient: first name, last name and birth date are required.' : 'Paciente nuevo: nombres, apellidos y fecha de nacimiento son obligatorios.';
-        } else {
-            $dup = $conexion->prepare("SELECT IDPACIENTE FROM AG_PACIENTE WHERE ESTADO='A' AND ((? <> '' AND CEDULA = ?) OR (? <> '' AND TELEFONO = ?)) LIMIT 1");
-            $dup->bind_param('ssss', $ced, $ced, $tel, $tel); $dup->execute();
-            if ($dup->get_result()->fetch_assoc()) {
-                $err = $en ? 'A patient with that ID or phone already exists. Search for them instead.' : 'Ya existe un paciente con esa cédula o teléfono. Búscalo en lugar de crearlo.';
-            }
-            $dup->close();
-        }
-        if (!$err) {
-            $v = '';
-            $ins = $conexion->prepare("INSERT INTO AG_PACIENTE (NOMBRES, APELLIDOS, EMAIL, FECHANACIMIENTO, TELEFONO, CEDULA, TITLE, SEX, GENDER, ESTADO, ADDRESS, NOTES, ADDNOTES)
-                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'A', ?, ?, ?)");
-            $ins->bind_param('ssssssssssss', $nom, $ape, $v, $fn, $tel, $ced, $v, $sex, $v, $v, $v, $v);
-            if ($ins->execute()) {
-                $idPac = (int)$conexion->insert_id;
-                auditar($conexion, 'Pacientes', 'crear', 'AG_PACIENTE', $idPac, 'Creó paciente (triaje, sin cita): '.trim($nom.' '.$ape));
-            } else { $err = $en ? 'Could not create the patient.' : 'No se pudo crear el paciente.'; }
-            $ins->close();
-        }
+        $rn = paciente_crear_minimo($conexion, $_POST['nombres'] ?? '', $_POST['apellidos'] ?? '', $_POST['cedula'] ?? '',
+                                    $_POST['telefono'] ?? '', $_POST['feNac'] ?? '', $_POST['sex'] ?? '', 'triaje, sin cita');
+        if ($rn['ok']) { $idPac = $rn['id']; }
+        elseif ($rn['error'] === 'DUPLICADO') $err = $en ? 'A patient with that ID or phone already exists. Search for them instead.' : 'Ya existe un paciente con esa cédula o teléfono. Búscalo en lugar de crearlo.';
+        elseif ($rn['error'] === 'DATOS_INCOMPLETOS') $err = $en ? 'New patient: first name, last name and birth date are required.' : 'Paciente nuevo: nombres, apellidos y fecha de nacimiento son obligatorios.';
+        else $err = $en ? 'Could not create the patient.' : 'No se pudo crear el paciente.';
     }
     if (!$err) {
         $hoy = date('Y-m-d'); $ini = date('H:i'); $fin = date('H:i', strtotime($ini) + 3600);

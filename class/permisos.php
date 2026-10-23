@@ -37,6 +37,7 @@ function permisos_catalogo() {
         'pac.fusionar'         => ['Fusionar duplicados',           'Pacientes',     ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0]],
         'pac.documentos'       => ['Documentos (plantillas)',       'Pacientes',     ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0]],
         'pac.docenviados'      => ['Documentos enviados',           'Pacientes',     ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
+        'pac.historias'        => ['Historias escaneadas (subir PDF, crear paciente)','Pacientes',['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>1]],
         'pac.archivos'         => ['Documentos del paciente (PDF)',  'Pacientes',     ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
         // Configuración / catálogos
         'cfg.crear_doctor'     => ['Crear doctor',                  'Configuración', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>0]],

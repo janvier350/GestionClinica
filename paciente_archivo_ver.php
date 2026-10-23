@@ -16,7 +16,7 @@ if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
 if (!isset($_SESSION["rol"])) { http_response_code(403); exit('No autorizado'); }
 if (isset($_SESSION['expire']) && time() > $_SESSION['expire']) { session_destroy(); http_response_code(403); exit('Sesión expirada'); }
-if (!puede('pac.archivos')) { http_response_code(403); exit('Sin permiso'); }
+if (!puede('pac.archivos') && !puede('pac.historias')) { http_response_code(403); exit('Sin permiso'); }
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { http_response_code(400); exit('Solicitud inválida'); }

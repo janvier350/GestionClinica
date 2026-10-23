@@ -35,7 +35,7 @@ function modulos_catalogo() {
         'documentos_paciente' => ['Documentos del paciente (PDF)', 'Patient documents (PDF)',
             'Subida y consulta segura de PDF por paciente (base de las historias escaneadas).',
             'Secure per-patient PDF upload and viewing (basis for scanned records).',
-            true, true, ['pac.archivos']],
+            true, true, ['pac.archivos','pac.historias']],
         'documentos_plantillas' => ['Plantillas y documentos para firmar', 'Document templates & signing',
             'Plantillas de documentos, envío y firma electrónica.',
             'Document templates, sending and e-signature.',

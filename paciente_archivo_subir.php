@@ -9,16 +9,21 @@ require_once("class/funciones.php");
 require_once("class/conexionBD.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/auditoria.php");
+require_once(__DIR__ . "/class/pacientes_util.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 header('Content-Type: application/json; charset=utf-8');
 
 if (!isset($_SESSION["rol"])) { echo json_encode(['ok'=>false,'error'=>'SIN_SESION']); exit; }
 if (isset($_SESSION['expire']) && time() > $_SESSION['expire']) { echo json_encode(['ok'=>false,'error'=>'SIN_SESION']); exit; }
-if (!puede('pac.archivos')) { echo json_encode(['ok'=>false,'error'=>'SIN_PERMISO']); exit; }
+if (!puede('pac.archivos') && !puede('pac.historias')) { echo json_encode(['ok'=>false,'error'=>'SIN_PERMISO']); exit; }
 
 $idPaciente = (int)($_POST['idPaciente'] ?? 0);
 $titulo     = trim($_POST['titulo'] ?? '');
+$tipo       = (($_POST['tipo'] ?? '') === 'historia_fisica') ? 'historia_fisica' : null;
+$fechaDoc   = trim($_POST['fecha_doc'] ?? '');
+if ($fechaDoc !== '') { $fd = DateTime::createFromFormat('Y-m-d', $fechaDoc); $fechaDoc = ($fd && $fd->format('Y-m-d') === $fechaDoc) ? $fechaDoc : ''; }
+paciente_archivos_asegurar($conexion);
 if ($idPaciente <= 0) { echo json_encode(['ok'=>false,'error'=>'PACIENTE_INVALIDO']); exit; }
 if (!isset($_FILES['archivo'])) { echo json_encode(['ok'=>false,'error'=>'SIN_ARCHIVO']); exit; }
 
@@ -71,10 +76,10 @@ $tam    = (int)$f['size'];
 $idUser = (int)($_SESSION['iduser'] ?? 0);
 
 $ins = $conexion->prepare(
-    "INSERT INTO paciente_archivos (IDPACIENTE, titulo, nombre_original, archivo, mime, tamano, id_usuario)
-     VALUES (?,?,?,?,?,?,?)"
+    "INSERT INTO paciente_archivos (IDPACIENTE, titulo, nombre_original, archivo, mime, tamano, id_usuario, tipo, fecha_doc)
+     VALUES (?,?,?,?,?,?,?,?,NULLIF(?,''))"
 );
-$ins->bind_param('issssii', $idPaciente, $titulo, $nombreOrig, $almacen, $mime, $tam, $idUser);
+$ins->bind_param('issssiiss', $idPaciente, $titulo, $nombreOrig, $almacen, $mime, $tam, $idUser, $tipo, $fechaDoc);
 if (!$ins->execute()) {
     @unlink($destAbs);
     echo json_encode(['ok'=>false,'error'=>'Error al registrar: '.$ins->error]); exit;

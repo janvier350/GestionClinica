@@ -214,6 +214,13 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                     <?php endif; ?>
                 </ul>
             </li>
+            <?php if (puede('pac.historias')): ?>
+            <li>
+                <a href="historias_escaneadas.php" class="<?php echo menuActivo('historias_escaneadas.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-file-earmark-pdf"></i> <?php echo (current_lang()==='en'?'Scanned records':'Historias escaneadas'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (puede('pac.documentos')): ?>
             <li>
                 <a href="gestionar_documentos.php" class="<?php echo menuActivo('gestionar_documentos.php', $paginaActual); ?>">

@@ -6,3 +6,8 @@ config.local.php
 error_log
 **/error_log
 *.log
+
+documentos_pacientes/doc_*
+tickets_adjuntos/*
+!tickets_adjuntos/index.php
+!tickets_adjuntos/.htaccess
