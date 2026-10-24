@@ -38,6 +38,12 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
         transition: background .15s;
     }
     .sidebar-logout-footer a.logout-link:hover { background: rgba(220,53,69,.08); }
+    .sidebar-logout-footer a.logout-link { height:auto !important; line-height:1.2 !important; justify-content:flex-start; }
+    .sidebar-logout-footer a.logout-link i { position:static !important; margin:0 !important; font-size:1.1rem; width:auto; opacity:1; color:#dc3545; }
+    .sidebar-lang { flex-wrap:wrap; }
+    .sidebar-lang .lang-label { display:flex; align-items:center; gap:4px; flex:0 0 100%; }
+    .sidebar-lang .lang-label i { position:static !important; margin:0 !important; }
+    .sidebar-lang a { height:auto !important; line-height:1.4 !important; width:auto !important; flex:0 0 auto; padding:3px 12px !important; text-align:center; }
 
     .sidebar-lang { display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:.8rem; }
     .sidebar-lang .lang-label { color:#6c757d; font-weight:600; }
@@ -475,7 +481,7 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
                         <a href="set_lang.php?lang=es&redir=<?php echo urlencode($redirLang); ?>" class="<?php echo $lang === 'es' ? 'active' : ''; ?>">ES</a>
                     </div>
                     <a href="salir.php" class="logout-link">
-                        <i class="metismenu-icon bi bi-power"></i> <?php te('menu.logout'); ?>
+                        <i class="bi bi-box-arrow-right"></i> <?php te('menu.logout'); ?>
                     </a>
                 </div>
             </li>
