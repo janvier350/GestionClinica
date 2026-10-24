@@ -16,6 +16,7 @@ require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/derivacion.php");
 require_once(__DIR__ . "/class/enfermeria.php");
 require_once(__DIR__ . "/class/guia_rapida.php");
+require_once(__DIR__ . "/class/mailer.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -250,8 +251,8 @@ function panel_historial($conexion, $idPac, $en, $verExamenes, $ahora) {
             <?php endforeach; ?>
 
             <?php if ($hechos): ?>
-            <h6 class="mt-4"><?php echo $en?'Recorded today':'Registradas hoy'; ?></h6>
-            <div class="card shadow-sm"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+            <h6 class="mt-4"><?php echo $en?'Recorded today':'Registradas hoy'; ?> <span class="badge bg-secondary"><?php echo count($hechos); ?></span></h6>
+            <div class="card shadow-sm mb-4"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
                 <thead><tr><th><?php echo $en?'Time':'Hora'; ?></th><th><?php echo $en?'Patient':'Paciente'; ?></th><th><?php echo $en?'Product':'Suero'; ?></th><th><?php echo $en?'Lot':'Lote'; ?></th><th><?php echo $en?'Status':'Estado'; ?></th><th><?php echo $en?'By':'Por'; ?></th></tr></thead><tbody>
                 <?php foreach ($hechos as $x): ?><tr>
                     <td><?php echo h(date('H:i', strtotime($x['FECHA_APLICACION']))); ?></td><td><?php echo h($x['PACIENTE']); ?></td>
@@ -260,6 +261,16 @@ function panel_historial($conexion, $idPac, $en, $verExamenes, $ahora) {
                     <td><?php echo h($x['APLICA']); ?></td></tr><?php endforeach; ?>
                 </tbody></table></div></div>
             <?php endif; ?>
+
+            <?php $nAp = 0; $nSu = 0; foreach ($hechos as $x) { if ($x['ESTADO'] === 'Aplicado') $nAp++; else $nSu++; } ?>
+            <footer class="mt-5 pt-3 pb-5 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+                <div><i class="bi bi-droplet-half"></i> <b><?php echo h(mail_brand()); ?></b> · <?php echo $en?'IV therapy':'Sueroterapia'; ?> · <?php echo h(date('m/d/Y')); ?></div>
+                <div>
+                    <span class="badge bg-success"><?php echo $nAp; ?> <?php echo $en?'applied today':'aplicados hoy'; ?></span>
+                    <?php if ($nSu): ?><span class="badge bg-secondary"><?php echo $nSu; ?> <?php echo $en?'suspended':'suspendidos'; ?></span><?php endif; ?>
+                    <span class="badge bg-warning text-dark"><?php echo count($pend); ?> <?php echo $en?'pending':'pendientes'; ?></span>
+                </div>
+            </footer>
 
         </div></div>
     </div>

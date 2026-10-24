@@ -32,3 +32,6 @@ Copyright (c) 2015 Daniel Eden
 /* Logo de la clínica en la cabecera (L'Chaim) */
 .app-header .app-header__logo .logo-src,.app-sidebar .app-header__logo .logo-src{height:46px;width:46px;background:url(images/logo_clinica.png) no-repeat center/contain !important;border-radius:6px}
 .app-header .app-header__logo{width:auto}
+
+/* Espacio al final del contenido: que las tablas no queden pegadas al borde */
+.app-main__inner{padding-bottom:48px !important}
