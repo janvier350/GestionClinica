@@ -15,6 +15,7 @@ require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/derivacion.php");
 require_once(__DIR__ . "/class/enfermeria.php");
+require_once(__DIR__ . "/class/guia_rapida.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -184,6 +185,7 @@ function panel_historial($conexion, $idPac, $en, $verExamenes, $ahora) {
             </div></div></div>
 
             <?php if ($msg): ?><div class="alert alert-<?php echo h($msg[0]); ?>"><?php echo h($msg[1]); ?></div><?php endif; ?>
+            <?php if (modulo_activo('atencion_rapida')) echo guia_rapida_html($en, $_SESSION['rol'] ?? '', 4); ?>
 
             <h6><?php echo $en?'IV appointments today':'Citas de sueroterapia de hoy'; ?> <span class="badge bg-secondary"><?php echo count($citasHoy); ?></span></h6>
             <?php if (!$citasHoy): ?><div class="card shadow-sm mb-3"><div class="card-body text-muted small"><?php echo $en?'No IV appointments assigned to nursing today. Schedule one in the calendar with a service handled by a nurse (Visit types → “Handled by”).':'No hay citas de sueroterapia asignadas a enfermería hoy. Agéndalas en el calendario con un servicio que atiende la enfermera (Tipos de consulta → “Lo atiende”).'; ?></div></div><?php endif; ?>

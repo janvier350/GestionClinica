@@ -11,6 +11,7 @@ require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/turnos.php");
+require_once(__DIR__ . "/class/guia_rapida.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 if (!isset($_SESSION["rol"])) { header("Location: break.php"); exit(); }
@@ -121,6 +122,8 @@ if ($q) while ($r = $q->fetch_assoc()) $aseguradoras[] = $r['n'];
                 <div><?php echo $en?'Quick check-in':'Atención rápida'; ?>
                     <div class="page-title-subheading"><?php echo $en?'Check in, wait, care, report, payment.':'Ingreso, espera, atención, reporte y cobro.'; ?></div>
                 </div></div></div></div>
+
+            <?php echo guia_rapida_html($en, $_SESSION['rol'] ?? '', 1); ?>
 
             <?php if ($pIngresar): ?>
             <div class="card shadow-sm mb-3"><div class="card-body">

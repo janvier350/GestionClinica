@@ -11,6 +11,7 @@ require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/turnos.php");
+require_once(__DIR__ . "/class/guia_rapida.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 if (!isset($_SESSION["rol"])) { header("Location: break.php"); exit(); }
@@ -109,6 +110,7 @@ if (isset($_GET['tablero'])) { header('Content-Type: text/html; charset=utf-8');
                 <div><?php echo $en?'Waiting room':'Sala de espera'; ?>
                     <div class="page-title-subheading"><?php echo $en?'Patients waiting for your services. Press “Attend” to take one.':'Pacientes que esperan sus servicios. Pulsa “Atender” para tomar uno.'; ?></div>
                 </div></div></div></div>
+            <?php echo guia_rapida_html($en, $rol, 3); ?>
             <div id="sala"><?php echo sala_html($conexion, $en, $uid, $rol); ?></div>
             <div class="small text-muted mt-3"><i class="bi bi-arrow-repeat"></i> <?php echo $en?'Updates every 10 seconds.':'Se actualiza cada 10 segundos.'; ?></div>
         </div></div>

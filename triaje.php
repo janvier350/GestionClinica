@@ -16,6 +16,7 @@ require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/triaje.php");
 require_once(__DIR__ . "/class/pacientes_util.php");
+require_once(__DIR__ . "/class/guia_rapida.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -203,6 +204,7 @@ function tv($tri, $k) {
             <?php if ($msg): ?><div class="alert alert-<?php echo h($msg[0]); ?>"><?php echo h($msg[1]); ?></div><?php endif; ?>
 
 <?php if (!$cita && !$sinCita): ?>
+            <?php if (modulo_activo('atencion_rapida')) echo guia_rapida_html($en, $_SESSION['rol'] ?? '', 2); ?>
             <form method="GET" class="card shadow-sm mb-3"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
                 <a class="btn btn-sm btn-outline-secondary" href="triaje.php?fecha=<?php echo h($fPrev); ?>" title="<?php echo $en?'Previous day':'Día anterior'; ?>"><i class="bi bi-chevron-left"></i></a>
                 <input type="date" name="fecha" value="<?php echo h($fechaSel); ?>" class="form-control form-control-sm" style="max-width:160px;" onchange="this.form.submit()">
