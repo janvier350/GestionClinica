@@ -107,6 +107,7 @@ if ($puedeOrdenar || $verExamenes) { enfermeria_asegurar_tablas($conexion); $exa
 
 // Derivación: la recibida (esta cita es el destino) y las emitidas desde esta cita
 require_once(__DIR__ . '/class/derivacion.php');
+require_once(__DIR__ . '/class/suero_catalogo.php');
 $derRecibida = null; $derEmitidas = []; $doctoresDerivar = [];
 $modDeriva = modulo_activo('derivacion');
 if ($modDeriva) {
@@ -2102,6 +2103,15 @@ function exAtencionRealizado(id) {
 </script>
 <?php endif; ?>
 <?php if ($modDeriva && puede('derivar.crear')): $enM = (current_lang() === 'en'); ?>
+<?php echo suero_catalogo_datalist($conexion); ?>
+<script><?php echo suero_catalogo_js($conexion); ?>
+document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.matches || !t.matches('input[list="listaSueros"]') || !window.SUEROS_CAT) return;
+    var s = window.SUEROS_CAT[t.value]; if (!s) return;
+    var row = t.closest('.row'); if (!row) return;
+    var d = row.querySelector('[name="dosis"],[data-k="dosis"]'), i = row.querySelector('[name="indicaciones"],[data-k="indicaciones"]'), v = row.querySelector('[name="via"],[data-k="via"]');
+    if (d && !d.value) d.value = s.d || ''; if (i && !i.value) i.value = s.i || ''; if (v && !v.value) v.value = 'IV';
+});</script>
 <div class="modal fade" id="modalDerivar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-right-circle me-1"></i><?php echo $enM ? 'Refer patient' : 'Derivar paciente'; ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
@@ -2137,7 +2147,7 @@ function exAtencionRealizado(id) {
         SUERO_REQUERIDO: en?'Add at least one order.':'Agrega al menos una orden.', SIN_PERMISO: en?'No permission.':'Sin permiso.', MISMO_PROFESIONAL: en?'Choose a different professional.':'Elige otro profesional.'};
     function addItem(){
         var d = document.createElement('div'); d.className = 'row g-2 mb-2 der-item';
-        d.innerHTML = '<div class="col-md-4"><input class="form-control form-control-sm" data-k="producto" placeholder="'+(en?'IV product':'Suero / producto')+'"></div>'
+        d.innerHTML = '<div class="col-md-4"><input class="form-control form-control-sm" data-k="producto" list="listaSueros" autocomplete="off" placeholder="'+(en?'IV product':'Suero / producto')+'"></div>'
             + '<div class="col-md-3"><input class="form-control form-control-sm" data-k="dosis" placeholder="'+(en?'Dose':'Dosis')+'"></div>'
             + '<div class="col-md-2"><input class="form-control form-control-sm" data-k="via" placeholder="'+(en?'Route':'Vía')+'"></div>'
             + '<div class="col-md-3"><input class="form-control form-control-sm" data-k="indicaciones" placeholder="'+(en?'Instructions':'Indicaciones')+'"></div>';

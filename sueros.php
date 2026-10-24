@@ -16,6 +16,7 @@ require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/derivacion.php");
 require_once(__DIR__ . "/class/enfermeria.php");
 require_once(__DIR__ . "/class/guia_rapida.php");
+require_once(__DIR__ . "/class/suero_catalogo.php");
 require_once(__DIR__ . "/class/mailer.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
@@ -204,7 +205,7 @@ function panel_historial($conexion, $idPac, $en, $verExamenes, $ahora) {
                 </div>
                 <form method="POST" class="row g-2 align-items-end mt-1">
                     <input type="hidden" name="accion" value="orden"><input type="hidden" name="idCita" value="<?php echo (int)$c['IDCITA']; ?>">
-                    <div class="col-md-4"><label class="form-label small mb-0"><?php echo $en?'IV / product':'Suero / producto'; ?></label><input name="producto" class="form-control form-control-sm" maxlength="150" required></div>
+                    <div class="col-md-4"><label class="form-label small mb-0"><?php echo $en?'IV / product':'Suero / producto'; ?></label><input name="producto" list="listaSueros" autocomplete="off" class="form-control form-control-sm" maxlength="150" required></div>
                     <div class="col-md-2"><label class="form-label small mb-0"><?php echo $en?'Dose':'Dosis'; ?></label><input name="dosis" class="form-control form-control-sm" maxlength="80"></div>
                     <div class="col-md-2"><label class="form-label small mb-0"><?php echo $en?'Route':'Vía'; ?></label><input name="via" class="form-control form-control-sm" maxlength="40" placeholder="IV"></div>
                     <div class="col-md-3"><label class="form-label small mb-0"><?php echo $en?'Instructions':'Indicaciones'; ?></label><input name="indicaciones" class="form-control form-control-sm"></div>
@@ -275,6 +276,15 @@ function panel_historial($conexion, $idPac, $en, $verExamenes, $ahora) {
         </div></div>
     </div>
 </div>
+<?php echo suero_catalogo_datalist($conexion); ?>
+<script><?php echo suero_catalogo_js($conexion); ?>
+document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.matches || !t.matches('input[list="listaSueros"]') || !window.SUEROS_CAT) return;
+    var s = window.SUEROS_CAT[t.value]; if (!s) return;
+    var row = t.closest('.row'); if (!row) return;
+    var d = row.querySelector('[name="dosis"],[data-k="dosis"]'), i = row.querySelector('[name="indicaciones"],[data-k="indicaciones"]'), v = row.querySelector('[name="via"],[data-k="via"]');
+    if (d && !d.value) d.value = s.d || ''; if (i && !i.value) i.value = s.i || ''; if (v && !v.value) v.value = 'IV';
+});</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function examenRealizado(id) {
