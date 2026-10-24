@@ -12,6 +12,8 @@ require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/turnos.php");
 require_once(__DIR__ . "/class/guia_rapida.php");
+require_once(__DIR__ . "/class/ui.php");
+require_once(__DIR__ . "/class/modulos.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 if (!isset($_SESSION["rol"])) { header("Location: break.php"); exit(); }
@@ -64,6 +66,13 @@ function tablero_html($conexion, $en, $pIngresar, $pCobrar) {
       <div class="table-responsive"><table class="table table-sm small mb-0"><tbody>
       <?php foreach (array_reverse($col['Fin']) as $t): ?><tr><td><?php echo h(date('H:i', strtotime($t['FECHA_INGRESO']))); ?></td><td><?php echo h($t['PACIENTE']); ?></td><td><?php echo h($t['SERVICIOS'] ?: $t['SERVICIO']); ?></td><td class="text-end">$<?php echo number_format((float)$t['MONTO'], 2); ?> · <?php echo h($t['METODO']); ?></td></tr><?php endforeach; ?>
       </tbody></table></div></details><?php endif; ?>
+    <?php echo pie_pagina_html($en ? 'Quick check-in' : 'Atención rápida', [
+        [count($col['Triaje']) . ($en ? ' in triage' : ' en triaje'), 'info text-dark'],
+        [count($col['Espera']) . ($en ? ' waiting' : ' en espera'), 'warning text-dark'],
+        [count($col['Atencion']) . ($en ? ' in care' : ' en atención'), 'primary'],
+        [count($col['Cobrar']) . ($en ? ' to charge' : ' por cobrar'), 'danger'],
+        [count($col['Fin']) . ($en ? ' finished' : ' finalizados'), 'success'],
+    ]); ?>
     <?php return ob_get_clean();
 }
 
@@ -74,8 +83,9 @@ $servicios = []; $q = $conexion->query("SELECT IDTIPOCONSULTA id, NOMBRES nombre
 if ($q) while ($r = $q->fetch_assoc()) $servicios[] = $r;
 $especialistas = []; $q = $conexion->query("SELECT U.IDADM_USUARIO id, CONCAT(U.NOMBRES,' ',U.APELLIDOS) nombre, R.CARGO rol FROM ADM_USUARIO U INNER JOIN ADM_ROL R ON R.IDADM_ROL=U.IDADM_ROL WHERE U.ESTADO='A' AND R.CARGO IN ('DOCTOR','ENFERMERA') ORDER BY R.CARGO, U.NOMBRES");
 if ($q) while ($r = $q->fetch_assoc()) $especialistas[] = $r;
-$aseguradoras = []; $q = @$conexion->query("SELECT Empresa_seguro n FROM seguros WHERE estado = 1 ORDER BY Empresa_seguro");
-if ($q) while ($r = $q->fetch_assoc()) $aseguradoras[] = $r['n'];
+$usaSeguros = modulo_activo('seguros');
+$aseguradoras = []; if ($usaSeguros) $q = @$conexion->query("SELECT Empresa_seguro n FROM seguros WHERE estado = 1 ORDER BY Empresa_seguro");
+if ($usaSeguros && $q) while ($r = $q->fetch_assoc()) $aseguradoras[] = $r['n'];
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo current_lang(); ?>">
@@ -160,7 +170,7 @@ if ($q) while ($r = $q->fetch_assoc()) $aseguradoras[] = $r['n'];
                 <div class="row g-2 mt-1">
                     <div class="col-md-4"><input id="ingMotivo" class="form-control form-control-sm" maxlength="255" placeholder="<?php echo $en?'Reason (optional)':'Motivo (opcional)'; ?>"></div>
                     <div class="col-md-3"><input id="ingDerivador" class="form-control form-control-sm" maxlength="120" placeholder="<?php echo $en?'Referring doctor (optional)':'Médico derivador (opcional)'; ?>"></div>
-                    <div class="col-md-3"><select id="ingAseguradora" class="form-select form-select-sm"><option value="">Particular</option><?php foreach ($aseguradoras as $a): ?><option><?php echo h($a); ?></option><?php endforeach; ?></select></div>
+                    <div class="col-md-3<?php echo $usaSeguros ? '' : ' d-none'; ?>"><select id="ingAseguradora" class="form-select form-select-sm"><option value="">Particular</option><?php foreach ($aseguradoras as $a): ?><option><?php echo h($a); ?></option><?php endforeach; ?></select></div>
                     <div class="col-md-2"><input id="ingEmpresa" class="form-control form-control-sm" maxlength="120" placeholder="<?php echo $en?'Company':'Empresa'; ?>"></div>
                 </div>
                 <div class="row g-2 mt-1">
