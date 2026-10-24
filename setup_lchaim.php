@@ -31,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     <div class="form-text">Hoy: <b><?php echo h($brandActual); ?></b>. Se usa en correos, login y documentos.</div></div>
   <div class="form-check"><input class="form-check-input" type="checkbox" name="servicios" id="s1" checked><label class="form-check-label" for="s1">Crear servicios <b>Sueroterapia</b> (lo atiende la enfermera) y <b>Ecografía</b></label></div>
   <div class="form-check ms-4"><input class="form-check-input" type="checkbox" name="consulta" id="s1b" checked><label class="form-check-label" for="s1b">Crear también <b>Consulta general</b> si no existe</label></div>
+  <div class="form-check ms-4"><input class="form-check-input" type="checkbox" name="lista_oficial" id="s1d" checked><label class="form-check-label" for="s1d">Crear la <b>lista oficial de servicios</b> de la clínica: Nutrición, Sueroterapia (enfermería), Biorresonancia, Ozonoterapia, Medicina general, Electrocardiograma, Desintometría, Ecografía</label></div>
+  <div class="form-check ms-4"><input class="form-check-input" type="checkbox" name="desactivar_consulta" id="s1e"><label class="form-check-label" for="s1e">Desactivar «Consulta general» (queda reemplazada por «Medicina general»; no se borra)</label></div>
   <div class="form-check ms-4"><input class="form-check-input" type="checkbox" name="desactivar_heredados" id="s1c"><label class="form-check-label" for="s1c">Desactivar los servicios heredados en inglés (Aged care, Follow-up, Group Services, Initial, Telehealth consultation) — no se borran</label></div>
   <div class="form-check"><input class="form-check-input" type="checkbox" name="sede" id="s2" checked><label class="form-check-label" for="s2">Crear la localidad <b>Kennedy</b></label></div>
   <div class="form-check ms-4"><input class="form-check-input" type="checkbox" name="desactivar_otras" id="s3"><label class="form-check-label" for="s3">Desactivar las demás localidades (no se borran)</label></div>
@@ -52,6 +54,10 @@ if (isset($_POST['servicios'])) {
     if ($r && (int)$r->fetch_assoc()['c'] === 0) @$conexion->query("ALTER TABLE AG_TIPOCONSULTA ADD COLUMN ROL_ATIENDE VARCHAR(20) NULL");
     $lista = [['Sueroterapia','SUE','#00a3a3','ENFERMERA'], ['Ecografía','ECO','#7e57c2','']];
     if (isset($_POST['consulta'])) array_unshift($lista, ['Consulta general','CG','#3788d8','']);
+    if (isset($_POST['lista_oficial'])) {
+        foreach ([['Nutrición','NUT','#43a047',''], ['Biorresonancia','BIO','#f4511e',''], ['Ozonoterapia','OZO','#039be5',''],
+                  ['Medicina general','MG','#3788d8',''], ['Electrocardiograma','ECG','#e53935',''], ['Desintometría','DES','#8d6e63','']] as $x) $lista[] = $x;
+    }
     foreach ($lista as [$nom,$abr,$col,$rol]) {
         $q = $conexion->prepare("SELECT IDTIPOCONSULTA, ESTADO FROM AG_TIPOCONSULTA WHERE LOWER(TRIM(NOMBRES)) = LOWER(?) LIMIT 1");
         $q->bind_param('s', $nom); $q->execute(); $f = $q->get_result()->fetch_assoc(); $q->close();
@@ -64,6 +70,10 @@ if (isset($_POST['servicios'])) {
             $rep[] = ['NEW', "Servicio «$nom» creado".($rol ? " (lo atiende $rol)" : '')];
         }
     }
+}
+if (isset($_POST['desactivar_consulta'])) {
+    $conexion->query("UPDATE AG_TIPOCONSULTA SET ESTADO='I' WHERE LOWER(TRIM(NOMBRES)) = 'consulta general'");
+    $rep[] = ['OK', 'Servicio «Consulta general» desactivado'];
 }
 if (isset($_POST['desactivar_heredados'])) {
     $her = ['Aged care consultation','Follow-up consultation','Group Services','Initial consultation','Telehealth consultation'];
