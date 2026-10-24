@@ -44,7 +44,13 @@ if ($result->num_rows > 0) {
         auditar($conexion, 'Sesión', 'login', 'ADM_USUARIO', $row['IDADM_USUARIO'], 'Inició sesión');
 
         echo "<script language='JavaScript'>";
-        echo 'self.location = "' . (strtoupper($row['CARGO']) === 'ENFERMERA' && modulo_activo('triaje') ? '../triaje.php' : '../SCH_Calendar.php') . '"';
+        // Pantalla de inicio según el rol
+        $cargo = strtoupper($row['CARGO']);
+        $destino = 'SCH_Calendar.php';
+        if ($cargo === 'ENFERMERA' && modulo_activo('triaje')) $destino = 'triaje.php';
+        elseif ($cargo === 'ASISTENTE') $destino = 'home.php';
+        elseif ($cargo === 'DOCTOR' && modulo_activo('atencion_rapida')) $destino = 'sala_espera.php';
+        echo 'self.location = "../' . $destino . '"';
         echo "</script>";
     } else {
         auditar($conexion, 'Sesión', 'login_fallido', 'ADM_USUARIO', null, 'Contraseña incorrecta para usuario: '.$username);
