@@ -150,6 +150,9 @@ function suero_registrar($c, $idOrden, $estado, $lote, $obs, $reacc, $fechaHora,
                          INNER JOIN ADM_ROL R ON R.IDADM_ROL = U.IDADM_ROL AND R.CARGO = 'ENFERMERA'
                           SET A.ESTADO_CITA = 'A'
                         WHERE A.ESTADO_CITA NOT IN ('A','Cancelada','Cancelado')");
+            // Atención rápida: el turno ligado a esa cita pasa a Atendido
+            $cs = $c->query("SELECT D.IDCITA_ORIGEN i FROM derivacion D WHERE D.IDDERIVACION = $idDer");
+            if ($cs && ($rowc = $cs->fetch_assoc()) && (int)$rowc['i'] > 0) @$c->query("UPDATE turno SET ESTADO='Atendido', FECHA_FIN=NOW() WHERE IDCITA = ".(int)$rowc['i']." AND ESTADO IN ('Atencion','Espera')");
         }
     }
     auditar($c, 'Derivación', 'editar', 'suero_orden', $idOrden, ($estado === 'Aplicado' ? 'Aplicó' : 'Suspendió').' suero (orden #'.$idOrden.')');

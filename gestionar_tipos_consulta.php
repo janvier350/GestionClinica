@@ -21,6 +21,9 @@ requerir('cfg.tiposconsulta');
 // Columna "Lo atiende" (rol que atiende el servicio: DOCTOR / ENFERMERA / cualquiera). Self-healing.
 $rcol = @$conexion->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_TIPOCONSULTA' AND COLUMN_NAME='ROL_ATIENDE'");
 if ($rcol && (int)$rcol->fetch_assoc()['c'] === 0) { @$conexion->query("ALTER TABLE AG_TIPOCONSULTA ADD COLUMN ROL_ATIENDE VARCHAR(20) NULL"); }
+// Columna PRECIO (valor del servicio para la atención rápida y el cobro)
+$rpre = @$conexion->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_TIPOCONSULTA' AND COLUMN_NAME='PRECIO'");
+if ($rpre && (int)$rpre->fetch_assoc()['c'] === 0) { @$conexion->query("ALTER TABLE AG_TIPOCONSULTA ADD COLUMN PRECIO DECIMAL(10,2) NULL"); }
 $colorDefault = '#3788d8';
 $mensaje = null;
 
@@ -33,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $abreviatura = trim($_POST['abreviatura'] ?? '');
         $color       = trim($_POST['color'] ?? $colorDefault);
         $rolAtiende  = in_array($_POST['rol_atiende'] ?? '', ['DOCTOR','ENFERMERA'], true) ? $_POST['rol_atiende'] : '';
+        $precioTxt   = trim(str_replace(',', '.', (string)($_POST['precio'] ?? '')));
+        $precio      = ($precioTxt !== '' && is_numeric($precioTxt) && (float)$precioTxt >= 0) ? number_format((float)$precioTxt, 2, '.', '') : '';
 
         if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
             $color = $colorDefault;
@@ -42,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mensaje = ['err', t('tc.msg.nameRequired')];
         } elseif ($id > 0) {
             $stmt = $conexion->prepare(
-                "UPDATE AG_TIPOCONSULTA SET NOMBRES = ?, ABREVIATURA = ?, COLOR = ?, ROL_ATIENDE = NULLIF(?, '') WHERE IDTIPOCONSULTA = ?"
+                "UPDATE AG_TIPOCONSULTA SET NOMBRES = ?, ABREVIATURA = ?, COLOR = ?, ROL_ATIENDE = NULLIF(?, ''), PRECIO = NULLIF(?, '') WHERE IDTIPOCONSULTA = ?"
             );
-            $stmt->bind_param("ssssi", $nombres, $abreviatura, $color, $rolAtiende, $id);
+            $stmt->bind_param("sssssi", $nombres, $abreviatura, $color, $rolAtiende, $precio, $id);
             $stmt->execute();
             $stmt->close();
             $mensaje = ['ok', t('tc.msg.updated')];
         } else {
             $stmt = $conexion->prepare(
-                "INSERT INTO AG_TIPOCONSULTA (NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, ESTADO) VALUES (?, ?, ?, NULLIF(?, ''), 'A')"
+                "INSERT INTO AG_TIPOCONSULTA (NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, PRECIO, ESTADO) VALUES (?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), 'A')"
             );
-            $stmt->bind_param("ssss", $nombres, $abreviatura, $color, $rolAtiende);
+            $stmt->bind_param("sssss", $nombres, $abreviatura, $color, $rolAtiende, $precio);
             $stmt->execute();
             $stmt->close();
             $mensaje = ['ok', t('tc.msg.created')];
@@ -67,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tipos = [];
-$res = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, ESTADO FROM AG_TIPOCONSULTA ORDER BY NOMBRES");
+$res = $conexion->query("SELECT IDTIPOCONSULTA, NOMBRES, ABREVIATURA, COLOR, ROL_ATIENDE, PRECIO, ESTADO FROM AG_TIPOCONSULTA ORDER BY NOMBRES");
 while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
 ?>
 <!DOCTYPE html>
@@ -192,19 +197,21 @@ while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
                                         <th><?php te('common.name'); ?></th>
                                         <th><?php te('common.abbreviation'); ?></th>
                                         <th><?php echo current_lang()==='en'?'Handled by':'Lo atiende'; ?></th>
+                                        <th class="text-end"><?php echo current_lang()==='en'?'Price':'Valor'; ?></th>
                                         <th class="text-center"><?php te('common.status'); ?></th>
                                         <th class="text-end"><?php te('common.actions'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 <?php if (empty($tipos)): ?>
-                                    <tr><td colspan="6" class="text-center text-muted py-4"><?php te('tc.none'); ?></td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted py-4"><?php te('tc.none'); ?></td></tr>
                                 <?php else: foreach ($tipos as $t): ?>
                                     <tr>
                                         <td><span class="swatch" style="background:<?php echo htmlspecialchars($t['COLOR'] ?: $colorDefault); ?>"></span></td>
                                         <td><?php echo htmlspecialchars($t['NOMBRES']); ?></td>
                                         <td><?php echo htmlspecialchars($t['ABREVIATURA'] ?? '—'); ?></td>
                                         <td><?php $ra = $t['ROL_ATIENDE'] ?? ''; echo $ra === 'ENFERMERA' ? (current_lang()==='en'?'Nurse':'Enfermera') : ($ra === 'DOCTOR' ? (current_lang()==='en'?'Doctor':'Doctor') : '<span class="text-muted">'.(current_lang()==='en'?'Any':'Cualquiera').'</span>'); ?></td>
+                                        <td class="text-end"><?php echo $t['PRECIO'] !== null && $t['PRECIO'] !== '' ? '$'.number_format((float)$t['PRECIO'], 2) : '<span class="text-muted">—</span>'; ?></td>
                                         <td class="text-center">
                                             <?php if ($t['ESTADO'] === 'A'): ?>
                                                 <span class="badge bg-success"><?php te('common.active'); ?></span>
@@ -259,6 +266,11 @@ while ($r = $res->fetch_assoc()) { $tipos[] = $r; }
                         <input type="text" class="form-control" name="abreviatura" id="ftAbreviatura" maxlength="20">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label"><?php echo current_lang()==='en'?'Price (USD)':'Valor del servicio (USD)'; ?></label>
+                        <div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" name="precio" id="ftPrecio" placeholder="0.00"></div>
+                        <div class="form-text"><?php echo current_lang()==='en'?'Used by Quick check-in to add up the cost.':'Lo usa Atención rápida para sumar el costo al ingresar al paciente.'; ?></div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label"><?php echo current_lang()==='en'?'Handled by':'Lo atiende'; ?></label>
                         <select class="form-select" name="rol_atiende" id="ftRol">
                             <option value=""><?php echo current_lang()==='en'?'Any professional':'Cualquier profesional'; ?></option>
@@ -292,6 +304,7 @@ function nuevoTipo() {
     document.getElementById('ftNombres').value = '';
     document.getElementById('ftAbreviatura').value = '';
     document.getElementById('ftRol').value = '';
+    document.getElementById('ftPrecio').value = '';
     document.getElementById('ftColor').value = '<?php echo htmlspecialchars($colorDefault); ?>';
     modalTipo.show();
 }
@@ -302,6 +315,7 @@ function editarTipo(t) {
     document.getElementById('ftNombres').value = t.NOMBRES;
     document.getElementById('ftAbreviatura').value = t.ABREVIATURA || '';
     document.getElementById('ftRol').value = t.ROL_ATIENDE || '';
+    document.getElementById('ftPrecio').value = (t.PRECIO !== null && t.PRECIO !== undefined && t.PRECIO !== '') ? Number(t.PRECIO).toFixed(2) : '';
     document.getElementById('ftColor').value = t.COLOR || '<?php echo htmlspecialchars($colorDefault); ?>';
     modalTipo.show();
 }

@@ -87,6 +87,8 @@ function triaje_guardar($c, $idCita, $d, $idUsuario) {
     if (in_array($cita['ESTADO_CITA'], ['Pendiente','Confirmada','Reagendada'], true)) {
         $c->query("UPDATE AG_CITA SET ESTADO_CITA='Triada' WHERE IDCITA = $idCita");
     }
+    // Atención rápida: un paciente enviado a triaje pasa a la sala de espera del profesional
+    @$c->query("UPDATE turno SET ESTADO='Espera' WHERE IDCITA = $idCita AND ESTADO='Triaje'");
     auditar($c, 'Triaje', $existe ? 'editar' : 'crear', 'triaje', $idCita,
             ($existe ? 'Actualizó' : 'Registró').' triaje de la cita #'.$idCita);
     return true;

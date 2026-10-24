@@ -79,6 +79,10 @@ if (!$updCita->execute()) {
 }
 $updCita->close();
 
+// Atención rápida: si la cita nació de un turno, queda Atendido (listo para cobrar)
+@require_once(__DIR__ . '/class/turnos.php');
+if (function_exists('turno_cita_atendida')) turno_cita_atendida($conexion, $idCita);
+
 // Si esta cita era el destino de una derivación, la derivación queda atendida (tabla opcional)
 @$conexion->query("UPDATE derivacion SET ESTADO='Atendida' WHERE IDCITA_DESTINO = ".(int)$idCita." AND TIPO='PROFESIONAL'");
 

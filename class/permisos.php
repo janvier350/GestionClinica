@@ -29,6 +29,10 @@ function permisos_catalogo() {
         'agenda.revision'      => ['Revisión de citas por fecha',    'Agenda',        ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1]],
         // Triaje
         'triaje.registrar'     => ['Triaje (registrar signos vitales)', 'Triaje',    ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>1]],
+        // Atención rápida (sin agenda)
+        'rapida.ingresar'      => ['Atención rápida: ingresar pacientes',   'Atención rápida', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>0]],
+        'rapida.cobrar'        => ['Atención rápida: cobrar',               'Atención rápida', ['SISTEMA'=>1,'DOCTOR'=>0,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>0]],
+        'rapida.atender'       => ['Sala de espera: tomar y atender pacientes', 'Atención rápida', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>0,'ENFERMERA'=>1]],
         // Registro de atención (formato clínica)
         'atencion.registro'    => ['Registro de atención (editar)',  'Atención', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>0,'ENFERMERA'=>0]],
         'atencion.ver_registro'=> ['Hoja del paciente (ver / imprimir)', 'Atención', ['SISTEMA'=>1,'DOCTOR'=>1,'USUARIO'=>0,'ASISTENTE'=>1,'ENFERMERA'=>1]],

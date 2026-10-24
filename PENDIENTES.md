@@ -3,7 +3,11 @@
 Lista viva para no perder temas acordados. (No se publica: `*.md` está excluido del despliegue.)
 
 ## Recordar al cliente / al desarrollador
-- [ ] **Actualizar las guías de uso (`ayuda.php`)** después del *siguiente avance* que solicite la clínica. Incluir: triaje (con y sin cita),
+- [ ] **RECORDAR AL DESARROLLADOR (propuesta futura): consulta de cédula con autocompletar nombres.** La app que usa la clínica (HC Médica) tiene
+      «Número de documento + Consultar» que trae el nombre del paciente. Hoy nuestra «Atención rápida» solo busca en la base propia y valida el dígito
+      verificador de la cédula ecuatoriana; los nombres de un paciente nuevo se escriben a mano. Proponer a la clínica una integración con una fuente
+      de datos de identificación (a definir: proveedor/consulta autorizada, costo, y cumplimiento de la ley de protección de datos) como mejora de pago aparte.
+- [ ] **Actualizar las guías de uso (`ayuda.php`)** después del *siguiente avance* que solicite la clínica. Incluir: **atención rápida (ingreso, sala de espera, cobro)**, triaje (con y sin cita),
       sueroterapia por enfermería (órdenes, aplicación, notas de evolución, historial), derivación entre profesionales, exámenes,
       historias escaneadas, registro de atención y hoja del paciente, localidades, correo y WhatsApp, módulos. Quitar lo de nutrición
       y los textos de la clínica anterior (p. ej. `att.help.req.https`).
@@ -31,3 +35,8 @@ Lista viva para no perder temas acordados. (No se publica: `*.md` está excluido
 
 ## Despliegue
 - [x] `.cpanel.yml` publica en `/home/overcloc/public_html/GestionClinica/` (la URL actual del sitio). Si cambia la carpeta web, editar solo `DEPLOYPATH`.
+
+## Atención rápida (nuevo)
+- [ ] Cargar el **valor de cada servicio** en Tipos de consulta (campo «Valor») y marcar «Lo atiende» (Sueroterapia → Enfermera).
+- [ ] Activar el módulo «Atención rápida» y dar el rol ASISTENTE a recepción (ya tiene ingresar y cobrar por defecto).
+- [ ] Confirmar con la clínica: pantalla de ingreso (la imagen de HC Médica), cobro de varios servicios, descuentos, y si quieren reporte de caja diario.

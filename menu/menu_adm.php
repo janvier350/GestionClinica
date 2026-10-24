@@ -114,6 +114,20 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
 
             <!-- ══ AGENDA ══════════════════════════════════════════════ -->
             <li class="app-sidebar__heading"><?php te('menu.heading.schedule'); ?></li>
+            <?php if (puede('rapida.ingresar') || puede('rapida.cobrar')): ?>
+            <li>
+                <a href="atencion_rapida.php" class="<?php echo menuActivo('atencion_rapida.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-lightning-charge"></i> <?php echo (current_lang()==='en'?'Quick check-in':'Atención rápida'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
+            <?php if (puede('rapida.atender')): ?>
+            <li>
+                <a href="sala_espera.php" class="<?php echo menuActivo('sala_espera.php', $paginaActual); ?>">
+                    <i class="metismenu-icon bi bi-people"></i> <?php echo (current_lang()==='en'?'Waiting room':'Sala de espera'); ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <li>
                 <a href="SCH_Calendar.php" class="<?php echo menuActivo('SCH_Calendar.php', $paginaActual); ?>">
                     <i class="metismenu-icon bi bi-calendar3"></i> <?php te('menu.calendar'); ?>

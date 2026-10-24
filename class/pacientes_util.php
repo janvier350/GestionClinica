@@ -11,12 +11,13 @@ require_once(__DIR__ . '/auditoria.php');
  * Crea un paciente con datos mínimos. Devuelve ['ok'=>bool, 'id'=>int, 'error'=>string|null].
  * Rechaza duplicados por cédula o teléfono (activos): devuelve error 'DUPLICADO' y el id existente.
  */
-function paciente_crear_minimo($c, $nombres, $apellidos, $cedula, $telefono, $feNac, $sex, $contexto = 'alta rápida') {
+function paciente_crear_minimo($c, $nombres, $apellidos, $cedula, $telefono, $feNac, $sex, $contexto = 'alta rápida', $exigirFecha = true) {
     $nombres = trim($nombres); $apellidos = trim($apellidos); $cedula = trim($cedula);
     $telefono = trim($telefono); $feNac = trim($feNac);
     $sex = ($sex === 'Fame') ? 'Fame' : 'Male';
+    $sinFecha = (!$exigirFecha && $feNac === '');
     $dt = DateTime::createFromFormat('Y-m-d', $feNac);
-    if ($nombres === '' || $apellidos === '' || !$dt || $dt->format('Y-m-d') !== $feNac) {
+    if ($nombres === '' || $apellidos === '' || (!$sinFecha && (!$dt || $dt->format('Y-m-d') !== $feNac))) {
         return ['ok'=>false, 'id'=>0, 'error'=>'DATOS_INCOMPLETOS'];
     }
     $dup = $c->prepare("SELECT IDPACIENTE FROM AG_PACIENTE WHERE ESTADO='A' AND ((? <> '' AND CEDULA = ?) OR (? <> '' AND TELEFONO = ?)) LIMIT 1");
@@ -25,10 +26,19 @@ function paciente_crear_minimo($c, $nombres, $apellidos, $cedula, $telefono, $fe
     if ($x) return ['ok'=>false, 'id'=>(int)$x['IDPACIENTE'], 'error'=>'DUPLICADO'];
 
     $v = '';
+    // Sin fecha de nacimiento (atención rápida): NULL si la columna lo permite; si no, fecha vacía '0000-00-00'
+    $modoAnterior = null;
+    if ($sinFecha) {
+        $r = @$c->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_PACIENTE' AND COLUMN_NAME='FECHANACIMIENTO'");
+        $nullable = $r && ($x = $r->fetch_assoc()) && strtoupper($x['IS_NULLABLE']) === 'YES';
+        if ($nullable) { $feNac = null; }
+        else { $feNac = '0000-00-00'; $m = @$c->query("SELECT @@SESSION.sql_mode m"); $modoAnterior = $m ? $m->fetch_assoc()['m'] : ''; @$c->query("SET SESSION sql_mode=''"); }
+    }
     $ins = $c->prepare("INSERT INTO AG_PACIENTE (NOMBRES, APELLIDOS, EMAIL, FECHANACIMIENTO, TELEFONO, CEDULA, TITLE, SEX, GENDER, ESTADO, ADDRESS, NOTES, ADDNOTES)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'A', ?, ?, ?)");
     $ins->bind_param('ssssssssssss', $nombres, $apellidos, $v, $feNac, $telefono, $cedula, $v, $sex, $v, $v, $v, $v);
     $ok = $ins->execute(); $id = (int)$c->insert_id; $ins->close();
+    if ($modoAnterior !== null) { $c->query("SET SESSION sql_mode='" . $c->real_escape_string($modoAnterior) . "'"); }
     if (!$ok) return ['ok'=>false, 'id'=>0, 'error'=>'DB'];
     auditar($c, 'Pacientes', 'crear', 'AG_PACIENTE', $id, 'Creó paciente ('.$contexto.'): '.trim($nombres.' '.$apellidos));
     return ['ok'=>true, 'id'=>$id, 'error'=>null];

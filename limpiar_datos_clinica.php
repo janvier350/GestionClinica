@@ -34,6 +34,7 @@ $tablasDatos = [
     'documento_envio', 'facturas', 'factura_detalle', 'factura_pagos',
     'ausencias_doctor', 'tickets', 'ticket_adjuntos', 'ticket_comentarios',
     'triaje', 'auditoria', 'ip_geo', 'usuario_permisos', 'ADM_DOCTOR',
+    'derivacion', 'suero_orden', 'nota_enfermeria', 'examen_orden', 'atencion_registro', 'atencion_registro_item', 'turno', 'turno_servicio',
 ];
 
 $existe = function ($t) use ($conexion, $dbEsc) {
