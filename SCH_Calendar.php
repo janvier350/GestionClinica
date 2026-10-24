@@ -913,7 +913,7 @@ if ((int)($conexion->query("SHOW TABLES LIKE 'ausencias_doctor'")->num_rows ?? 0
                         <i class="bi bi-clipboard2-pulse"></i> <?php te('cal.viewHistory'); ?>
                     </a>
                     <button id="btnEditarPaciente" class="btn btn-outline-primary" type="button" onclick="editarPacienteDesdeCita()">
-                        <i class="bi bi-person-vcard"></i> <?php te('cal.editPatient'); ?>
+                        <i class="bi bi-person-badge"></i> <?php te('cal.editPatient'); ?>
                     </button>
                     <button id="btnEditar" class="btn btn-info text-white" type="button" onclick="toggleEditar()">
                         <i class="bi bi-pencil-square"></i> <?php te('common.edit'); ?>
@@ -966,7 +966,7 @@ if ((int)($conexion->query("SHOW TABLES LIKE 'ausencias_doctor'")->num_rows ?? 0
                 <form id="formEditarPaciente">
                     <input type="hidden" id="epId" name="idPaciente">
 
-                    <h6 class="text-muted mb-2"><i class="bi bi-person-vcard"></i> <?php te('pf.patientData'); ?></h6>
+                    <h6 class="text-muted mb-2"><i class="bi bi-person-badge"></i> <?php te('pf.patientData'); ?></h6>
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold"><?php te('pf.firstName'); ?> *</label>
@@ -2586,7 +2586,7 @@ function revisarAusenciaForm(){
     var fecha = (document.getElementById('fechafactura') || {}).value || '';
     var hora  = (document.getElementById('timeIni') || {}).value || '';
     var c = ausenciaConflicto(idDoc, fecha, hora);
-    if (c) { box.innerHTML = '<i class="bi bi-airplane me-1"></i>' + _ausTextoConflicto(c); box.classList.remove('d-none'); }
+    if (c) { box.innerHTML = '<i class="bi bi-umbrella me-1"></i>' + _ausTextoConflicto(c); box.classList.remove('d-none'); }
     else   { box.classList.add('d-none'); box.innerHTML = ''; }
 }
 document.addEventListener('DOMContentLoaded', function(){

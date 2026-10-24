@@ -11,6 +11,7 @@ require_once(__DIR__ . "/lang/i18n.php");
 require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/enfermeria.php");
+require_once(__DIR__ . "/class/ui.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 if (!isset($_SESSION["rol"])) { header("Location: break.php"); exit(); }
@@ -104,6 +105,12 @@ $lista = []; if ($st && $st->execute()) { $rs = $st->get_result(); while ($r = $
                         <button class="btn btn-sm btn-outline-secondary" onclick="exAccion(<?php echo (int)$e['IDEXAMEN']; ?>,'cancelar')"><i class="bi bi-x"></i></button><?php endif; ?></td></tr>
                 <?php endforeach; if (!$lista): ?><tr><td colspan="7" class="text-center text-muted py-4"><?php echo $en?'Nothing to show.':'No hay exámenes para mostrar.'; ?></td></tr><?php endif; ?>
                 </tbody></table></div></div>
+            <?php $cnt = ['Pendiente'=>0,'Realizado'=>0,'Cancelado'=>0]; foreach ($lista as $e) { $cnt[$e['ESTADO']] = ($cnt[$e['ESTADO']] ?? 0) + 1; }
+                  echo pie_pagina_html($en ? 'Exams' : 'Exámenes', [
+                      [$cnt['Pendiente'] . ($en ? ' pending' : ' pendientes'), 'warning text-dark'],
+                      [$cnt['Realizado'] . ($en ? ' completed' : ' realizados'), 'success'],
+                      [$cnt['Cancelado'] . ($en ? ' cancelled' : ' cancelados'), 'secondary'],
+                  ]); ?>
         </div></div>
     </div>
 </div>

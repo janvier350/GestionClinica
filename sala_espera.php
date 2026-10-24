@@ -12,6 +12,7 @@ require_once(__DIR__ . "/class/auditoria.php");
 require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/turnos.php");
 require_once(__DIR__ . "/class/guia_rapida.php");
+require_once(__DIR__ . "/class/ui.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 if (!isset($_SESSION["rol"])) { header("Location: break.php"); exit(); }
@@ -24,8 +25,9 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 $uid = (int)($_SESSION['iduser'] ?? 0); $rol = (string)($_SESSION['rol'] ?? '');
 
 function sala_html($conexion, $en, $uid, $rol) {
-    $esp = []; $mios = [];
+    $esp = []; $mios = []; $hechosMios = 0;
     foreach (turnos_hoy($conexion) as $t) {
+        if ($t['ESTADO'] === 'Atendido' && (int)$t['IDUSUARIO_ATIENDE'] === $uid && $t['FECHA_FIN'] && date('Y-m-d', strtotime($t['FECHA_FIN'])) === date('Y-m-d')) $hechosMios++;
         if ($t['ESTADO'] === 'Espera' && turno_visible_para($t, $uid, $rol)) $esp[] = $t;
         elseif ($t['ESTADO'] === 'Atencion' && ((int)$t['IDUSUARIO_ATIENDE'] === $uid || strtoupper($rol) === 'SISTEMA')) $mios[] = $t;
     }
@@ -62,6 +64,11 @@ function sala_html($conexion, $en, $uid, $rol) {
       </div></div></div>
     <?php endforeach; ?>
     </div>
+    <?php echo pie_pagina_html($en ? 'Waiting room' : 'Sala de espera', [
+        [count($esp) . ($en ? ' waiting' : ' en espera'), 'warning text-dark'],
+        [count($mios) . ($en ? ' in care' : ' en atención'), 'primary'],
+        [$hechosMios . ($en ? ' finished today' : ' atendidos hoy'), 'success'],
+    ]); ?>
     <?php return ob_get_clean();
 }
 if (isset($_GET['tablero'])) { header('Content-Type: text/html; charset=utf-8'); echo sala_html($conexion, $en, $uid, $rol); exit; }

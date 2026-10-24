@@ -304,7 +304,7 @@ $iniciales = strtoupper(substr($u['NOMBRES'] ?? '', 0, 1) . substr($u['APELLIDOS
                 <div class="row"><div class="col-12">
                   <div class="card shadow-sm mb-3">
                     <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                      <span><i class="bi bi-airplane me-1"></i><?php te('aus.title'); ?></span>
+                      <span><i class="bi bi-umbrella me-1"></i><?php te('aus.title'); ?></span>
                       <a href="ausencias_doctor.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square me-1"></i><?php te('aus.addTitle'); ?></a>
                     </div>
                     <div class="card-body">

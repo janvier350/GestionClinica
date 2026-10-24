@@ -66,6 +66,33 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
     .sb-search-results .sbs-meta { font-size:.72rem; color:#6c757d; }
     .sb-search-results .sbs-empty { padding:10px; color:#6c757d; font-size:.82rem; }
 </style>
+<script>
+/* Respaldo del menú: varias pantallas no cargan el script de la plantilla (metisMenu) y dejaban todos los grupos abiertos.
+   Si metisMenu no se inicializó, los grupos se pliegan/despliegan aquí (abre el que contiene la página actual). */
+(function () {
+    function iniciar() {
+        var nav = document.querySelector('.vertical-nav-menu');
+        if (!nav || nav.classList.contains('metismenu') || nav.getAttribute('data-acordeon')) return;
+        nav.setAttribute('data-acordeon', '1');
+        Array.prototype.forEach.call(nav.children, function (li) {
+            if (li.tagName !== 'LI') return;
+            var sub = null, a = null;
+            Array.prototype.forEach.call(li.children, function (c) { if (c.tagName === 'UL') sub = c; if (c.tagName === 'A') a = c; });
+            if (!sub || !a) return;
+            var abierto = !!sub.querySelector('a.mm-active');
+            sub.style.display = abierto ? '' : 'none';
+            if (abierto) li.classList.add('mm-active');
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                var visible = sub.style.display !== 'none';
+                sub.style.display = visible ? 'none' : '';
+                li.classList.toggle('mm-active', !visible);
+            });
+        });
+    }
+    window.addEventListener('load', function () { setTimeout(iniciar, 250); });
+})();
+</script>
 
 <div class="app-header__logo">
     <div class="logo-src"></div>
@@ -188,7 +215,7 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
             <?php if (puede('agenda.ausencias')): ?>
             <li>
                 <a href="ausencias_doctor.php" class="<?php echo menuActivo('ausencias_doctor.php', $paginaActual); ?>">
-                    <i class="metismenu-icon bi bi-airplane"></i> <?php te('menu.ausencias'); ?>
+                    <i class="metismenu-icon bi bi-umbrella"></i> <?php te('menu.ausencias'); ?>
                 </a>
             </li>
             <?php endif; ?>
@@ -400,7 +427,7 @@ $redirLang = $_SERVER['REQUEST_URI'] ?? 'home.php';
             </li>
             <li>
                 <a href="mail_config.php" class="<?php echo menuActivo('mail_config.php', $paginaActual); ?>">
-                    <i class="metismenu-icon bi bi-envelope-at"></i> <?php echo (current_lang()==='en'?'Email & WhatsApp':'Correo y WhatsApp'); ?>
+                    <i class="metismenu-icon bi bi-envelope-paper"></i> <?php echo (current_lang()==='en'?'Email & WhatsApp':'Correo y WhatsApp'); ?>
                 </a>
             </li>
             <li>

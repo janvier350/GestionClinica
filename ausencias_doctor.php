@@ -95,7 +95,7 @@ if ($rs) while ($d = $rs->fetch_assoc()) $doctores[] = $d;
                     <label class="form-label small mb-1"><?php te('aus.type'); ?></label>
                     <div class="btn-group btn-group-sm w-100" role="group">
                       <input type="radio" class="btn-check" name="ausTipo" id="ausTipoVac" value="vacacion" checked>
-                      <label class="btn btn-outline-primary" for="ausTipoVac"><i class="bi bi-airplane me-1"></i><?php te('aus.vacation'); ?></label>
+                      <label class="btn btn-outline-primary" for="ausTipoVac"><i class="bi bi-umbrella me-1"></i><?php te('aus.vacation'); ?></label>
                       <input type="radio" class="btn-check" name="ausTipo" id="ausTipoBlq" value="bloqueo">
                       <label class="btn btn-outline-primary" for="ausTipoBlq"><i class="bi bi-clock-history me-1"></i><?php te('aus.block'); ?></label>
                     </div>

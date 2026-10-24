@@ -20,3 +20,18 @@ if (!function_exists('avatar_iniciales')) {
              . htmlspecialchars($ini, ENT_QUOTES, 'UTF-8') . '</span>';
     }
 }
+
+if (!function_exists('pie_pagina_html')) {
+    /**
+     * Pie de página de las pantallas operativas: clínica · módulo · fecha, y contadores a la derecha.
+     * $badges: [[texto, clase-bootstrap], ...]  (ej. ['3 pendientes', 'warning text-dark'])
+     */
+    function pie_pagina_html($modulo, array $badges = []) {
+        require_once(__DIR__ . '/mailer.php');
+        $h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); };
+        $out  = '<footer class="mt-5 pt-3 pb-5 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">';
+        $out .= '<div><i class="bi bi-hospital"></i> <b>' . $h(mail_brand()) . '</b> · ' . $h($modulo) . ' · ' . $h(date('m/d/Y')) . '</div><div>';
+        foreach ($badges as [$txt, $cls]) $out .= '<span class="badge bg-' . $h($cls) . ' ms-1">' . $h($txt) . '</span>';
+        return $out . '</div></footer>';
+    }
+}

@@ -17,6 +17,7 @@ require_once(__DIR__ . "/class/permisos.php");
 require_once(__DIR__ . "/class/triaje.php");
 require_once(__DIR__ . "/class/pacientes_util.php");
 require_once(__DIR__ . "/class/guia_rapida.php");
+require_once(__DIR__ . "/class/ui.php");
 $conexion = conectarse();
 if ($conexion) { $conexion->set_charset('utf8mb4'); }
 
@@ -336,6 +337,12 @@ function tv($tri, $k) {
                     <?php endif; ?>
                     </tbody></table></div>
             </div></div>
+            <?php $nTriadas = 0; foreach ($hoyLista as $rr) { if ($rr['IDTRIAJE'] !== null) $nTriadas++; }
+                  echo pie_pagina_html($en ? 'Triage' : 'Triaje', [
+                      [count($hoyLista) . ($en ? ' appointments' : ' citas'), 'secondary'],
+                      [$nTriadas . ($en ? ' triaged' : ' con triaje'), 'info text-dark'],
+                      [(count($hoyLista) - $nTriadas) . ($en ? ' to triage' : ' por triar'), 'warning text-dark'],
+                  ]); ?>
 <?php endif; ?>
 
         </div></div>

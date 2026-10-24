@@ -303,7 +303,7 @@ $totalRows = $result ? $result->num_rows : 0;
                     <input type="hidden" id="epId" name="idPaciente">
 
                     <!-- Datos personales -->
-                    <h6 class="text-muted mb-2"><i class="bi bi-person-vcard"></i> <?php te('pf.patientData'); ?></h6>
+                    <h6 class="text-muted mb-2"><i class="bi bi-person-badge"></i> <?php te('pf.patientData'); ?></h6>
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold"><?php te('pf.firstName'); ?> *</label>
