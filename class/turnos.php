@@ -38,7 +38,7 @@ function turnos_asegurar_tablas($c) {
         INDEX idx_pac (IDPACIENTE),
         INDEX idx_cita (IDCITA)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    foreach (['IDUSUARIO_PREF' => 'INT NULL', 'DERIVADOR' => 'VARCHAR(120) NULL', 'ASEGURADORA' => 'VARCHAR(120) NULL', 'EMPRESA' => 'VARCHAR(120) NULL'] as $col => $def) {
+    foreach (['IDUSUARIO_PREF' => 'INT NULL', 'DERIVADOR' => 'VARCHAR(120) NULL', 'ASEGURADORA' => 'VARCHAR(120) NULL', 'EMPRESA' => 'VARCHAR(120) NULL', 'OBSERVACION' => 'VARCHAR(600) NULL'] as $col => $def) {
         $r = @$c->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='turno' AND COLUMN_NAME='$col'");
         if ($r && (int)$r->fetch_assoc()['c'] === 0) @$c->query("ALTER TABLE turno ADD COLUMN $col $def");
     }
@@ -143,14 +143,14 @@ function turno_crear($c, $d, $uid) {
     $suma = 0.0; foreach ($ids as $i) $suma += $servs[$i];
     $monto = (isset($d['monto']) && $d['monto'] !== '') ? max(0, (float)str_replace(',', '.', (string)$d['monto'])) : $suma;
     $texto = function($k, $n) use ($d) { return mb_substr(trim((string)($d[$k] ?? '')), 0, $n); };
-    $motivo = $texto('motivo', 255); $der = $texto('derivador', 120); $seg = $texto('aseguradora', 120); $emp = $texto('empresa', 120);
+    $motivo = $texto('motivo', 255); $der = $texto('derivador', 120); $seg = $texto('aseguradora', 120); $emp = $texto('empresa', 120); $obs = $texto('observacion', 600);
     $estado = (($d['destino'] ?? '') === 'triaje') ? 'Triaje' : 'Espera';
     $primero = $ids[0];
     $c->begin_transaction();
     try {
-        $st = $c->prepare("INSERT INTO turno (IDPACIENTE, IDTIPOCONSULTA, MOTIVO, ESTADO, IDUSUARIO_INGRESA, MONTO, IDUSUARIO_PREF, DERIVADOR, ASEGURADORA, EMPRESA)
-                           VALUES (?, ?, NULLIF(?,''), ?, ?, ?, NULLIF(?,0), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''))");
-        $st->bind_param('iissidisss', $idPac, $primero, $motivo, $estado, $uid, $monto, $pref, $der, $seg, $emp);
+        $st = $c->prepare("INSERT INTO turno (IDPACIENTE, IDTIPOCONSULTA, MOTIVO, ESTADO, IDUSUARIO_INGRESA, MONTO, IDUSUARIO_PREF, DERIVADOR, ASEGURADORA, EMPRESA, OBSERVACION)
+                           VALUES (?, ?, NULLIF(?,''), ?, ?, ?, NULLIF(?,0), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''))");
+        $st->bind_param('iissidissss', $idPac, $primero, $motivo, $estado, $uid, $monto, $pref, $der, $seg, $emp, $obs);
         if (!$st->execute()) throw new Exception('DB');
         $id = (int)$c->insert_id; $st->close();
         $sv = $c->prepare("INSERT INTO turno_servicio (IDTURNO, IDTIPOCONSULTA, PRECIO) VALUES (?, ?, ?)");
@@ -158,6 +158,16 @@ function turno_crear($c, $d, $uid) {
         $sv->close();
         $c->commit();
     } catch (Exception $e) { $c->rollback(); return ['ok'=>false, 'error'=>'ERROR_'.$e->getMessage()]; }
+    // Alerta permanente del paciente (alergias, etc.) si lo pidieron y la columna existe
+    if ($obs !== '' && !empty($d['alerta_permanente'])) {
+        $rcol = @$c->query("SELECT COUNT(*) c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='AG_PACIENTE' AND COLUMN_NAME='ALERTA'");
+        if ($rcol && (int)$rcol->fetch_assoc()['c'] > 0) {
+            $ra = $c->query("SELECT COALESCE(ALERTA,'') a FROM AG_PACIENTE WHERE IDPACIENTE = $idPac")->fetch_assoc();
+            $actual = trim((string)($ra['a'] ?? ''));
+            $nuevoTxt = ($actual === '') ? $obs : ((stripos($actual, $obs) !== false) ? $actual : $actual . ' | ' . $obs);
+            $ua = $c->prepare("UPDATE AG_PACIENTE SET ALERTA = ? WHERE IDPACIENTE = ?"); $ua->bind_param('si', $nuevoTxt, $idPac); $ua->execute(); $ua->close();
+        }
+    }
     auditar($c, 'Atención rápida', 'crear', 'turno', $id, 'Ingresó al paciente #'.$idPac.' ('.count($ids).' servicio/s) → '.($estado === 'Triaje' ? 'triaje' : 'sala de espera'));
     if ($estado === 'Triaje') turno_asegurar_cita($c, $id, $uid);   // la enfermera lo ve en la lista de triaje
     $res = ['ok'=>true, 'id'=>$id, 'aviso'=>$aviso, 'estado'=>$estado];

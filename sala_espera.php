@@ -32,9 +32,9 @@ function sala_html($conexion, $en, $uid, $rol) {
     ob_start(); ?>
     <h6><?php echo $en?'Waiting for me':'En espera para mí'; ?> <span class="badge bg-warning text-dark" id="nEspera"><?php echo count($esp); ?></span></h6>
     <?php if (!$esp): ?><div class="card shadow-sm mb-3"><div class="card-body text-center text-muted py-4"><?php echo $en?'Nobody waiting.':'No hay pacientes en espera.'; ?></div></div><?php endif; ?>
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 align-items-start">
     <?php foreach ($esp as $t): ?>
-      <div class="col-md-6 col-xl-4"><div class="card shadow-sm h-100 border-warning"><div class="card-body">
+      <div class="col-md-6 col-xl-4"><div class="card shadow-sm border-warning"><div class="card-body">
         <div class="d-flex justify-content-between"><div class="fs-6 fw-semibold"><?php echo h($t['PACIENTE']); ?></div>
             <span class="small <?php echo (int)$t['MIN_ESPERA'] >= 30 ? 'text-danger fw-bold' : 'text-muted'; ?>"><i class="bi bi-clock"></i> <?php echo h(turno_minutos_txt($t['MIN_ESPERA'])); ?></span></div>
         <div class="small text-muted"><?php echo h($t['CEDULA']); ?> · <?php echo $en?'arrived':'llegó'; ?> <?php echo h(date('H:i', strtotime($t['FECHA_INGRESO']))); ?></div>
@@ -42,16 +42,18 @@ function sala_html($conexion, $en, $uid, $rol) {
             <?php if ($t['IDTRIAJE'] !== null): ?><span class="badge bg-info text-dark"><?php echo $en?'Triaged':'Con triaje'; ?></span><?php endif; ?>
             <?php if ($t['ESPECIALISTA']): ?><span class="badge bg-light text-dark border"><i class="bi bi-person-badge"></i> <?php echo h($t['ESPECIALISTA']); ?></span><?php endif; ?></div>
         <?php if ($t['MOTIVO']): ?><div class="small fst-italic mt-1"><?php echo h($t['MOTIVO']); ?></div><?php endif; ?>
+        <?php if (!empty($t['OBSERVACION'])): ?><div class="alert alert-danger py-1 px-2 small mt-2 mb-0"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo h($t['OBSERVACION']); ?></div><?php endif; ?>
         <button class="btn btn-success w-100 mt-2" onclick="atender(<?php echo (int)$t['IDTURNO']; ?>)"><i class="bi bi-play-fill"></i> <?php echo $en?'Attend':'Atender'; ?></button>
       </div></div></div>
     <?php endforeach; ?>
     </div>
     <h6><?php echo $en?'In my care':'En atención'; ?> <span class="badge bg-primary"><?php echo count($mios); ?></span></h6>
     <?php if (!$mios): ?><div class="card shadow-sm"><div class="card-body text-center text-muted py-3 small">—</div></div><?php endif; ?>
-    <div class="row g-3">
+    <div class="row g-3 align-items-start">
     <?php foreach ($mios as $t): ?>
-      <div class="col-md-6 col-xl-4"><div class="card shadow-sm h-100 border-primary"><div class="card-body">
+      <div class="col-md-6 col-xl-4"><div class="card shadow-sm border-primary"><div class="card-body">
         <div class="fs-6 fw-semibold"><?php echo h($t['PACIENTE']); ?></div>
+        <?php if (!empty($t['OBSERVACION'])): ?><div class="alert alert-danger py-1 px-2 small mt-1 mb-1"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo h($t['OBSERVACION']); ?></div><?php endif; ?>
         <div class="small text-muted"><?php echo h($t['SERVICIOS'] ?: $t['SERVICIO']); ?> · <?php echo $en?'since':'desde'; ?> <?php echo $t['FECHA_INICIO'] ? h(date('H:i', strtotime($t['FECHA_INICIO']))) : '—'; ?></div>
         <div class="d-flex gap-2 mt-2">
           <?php if ($t['IDCITA']): ?><a class="btn btn-primary btn-sm flex-fill" href="atencion_paciente.php?idCita=<?php echo (int)$t['IDCITA']; ?>"><i class="bi bi-journal-medical"></i> <?php echo $en?'Open':'Abrir'; ?></a><?php endif; ?>

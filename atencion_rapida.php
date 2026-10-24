@@ -33,11 +33,11 @@ function tablero_html($conexion, $en, $pIngresar, $pCobrar) {
     }
     $titulos = ['Triaje'=>[$en?'In triage':'En triaje','info'], 'Espera'=>[$en?'Waiting':'En espera','warning'], 'Atencion'=>[$en?'In care':'En atención','primary'], 'Cobrar'=>[$en?'To collect':'Por cobrar','danger']];
     ob_start(); ?>
-    <div class="row g-3">
+    <div class="row g-3 align-items-start">
     <?php foreach ($titulos as $k => [$tit, $color]): ?>
-      <div class="col-md-3"><div class="card shadow-sm h-100"><div class="card-header py-2 d-flex justify-content-between bg-<?php echo $color; ?> <?php echo in_array($color, ['warning','info']) ? 'text-dark' : 'text-white'; ?>">
+      <div class="col-md-3"><div class="card shadow-sm"><div class="card-header py-2 d-flex justify-content-between bg-<?php echo $color; ?> <?php echo in_array($color, ['warning','info']) ? 'text-dark' : 'text-white'; ?>">
         <b><?php echo h($tit); ?></b><span class="badge bg-light text-dark"><?php echo count($col[$k]); ?></span></div>
-        <div class="card-body p-2" style="min-height:120px;">
+        <div class="card-body p-2">
         <?php foreach ($col[$k] as $t): ?>
           <div class="border rounded p-2 mb-2 bg-white">
             <div class="d-flex justify-content-between"><b><?php echo h($t['PACIENTE']); ?></b><span class="small text-muted"><?php echo h(date('H:i', strtotime($t['FECHA_INGRESO']))); ?></span></div>
@@ -46,6 +46,7 @@ function tablero_html($conexion, $en, $pIngresar, $pCobrar) {
             <?php if ($t['ESPECIALISTA']): ?><div class="small text-muted"><i class="bi bi-person-badge"></i> <?php echo h($t['ESPECIALISTA']); ?></div><?php endif; ?>
             <?php if ($k === 'Atencion' && $t['ATIENDE']): ?><div class="small"><i class="bi bi-person-check"></i> <?php echo h($t['ATIENDE']); ?></div><?php endif; ?>
             <?php if ($t['MOTIVO']): ?><div class="small fst-italic"><?php echo h($t['MOTIVO']); ?></div><?php endif; ?>
+            <?php if (!empty($t['OBSERVACION'])): ?><div class="small text-danger"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo h($t['OBSERVACION']); ?></div><?php endif; ?>
             <div class="d-flex justify-content-between align-items-center mt-1">
               <span class="small <?php echo (int)$t['MIN_ESPERA'] >= 30 && in_array($k, ['Triaje','Espera']) ? 'text-danger fw-bold' : 'text-muted'; ?>"><i class="bi bi-clock"></i> <?php echo h(turno_minutos_txt($t['MIN_ESPERA'])); ?></span>
               <span>
@@ -162,6 +163,10 @@ if ($q) while ($r = $q->fetch_assoc()) $aseguradoras[] = $r['n'];
                     <div class="col-md-3"><select id="ingAseguradora" class="form-select form-select-sm"><option value="">Particular</option><?php foreach ($aseguradoras as $a): ?><option><?php echo h($a); ?></option><?php endforeach; ?></select></div>
                     <div class="col-md-2"><input id="ingEmpresa" class="form-control form-control-sm" maxlength="120" placeholder="<?php echo $en?'Company':'Empresa'; ?>"></div>
                 </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-10"><textarea id="ingObs" class="form-control form-control-sm" rows="2" maxlength="600" placeholder="<?php echo $en?'Notes for triage / doctors (optional): allergies, medication, recommendations…':'Observaciones para triaje y doctores (opcional): alergias, medicación, recomendaciones…'; ?>"></textarea></div>
+                    <div class="col-md-2 d-flex align-items-center"><div class="form-check small mb-0"><input class="form-check-input" type="checkbox" id="ingAlerta"><label class="form-check-label" for="ingAlerta" title="<?php echo $en?'Saves it in the patient file so it always shows':'Se guarda en la ficha del paciente para que siempre se vea'; ?>"><?php echo $en?'Save as permanent patient alert':'Guardar como alerta permanente del paciente'; ?></label></div></div>
+                </div>
                 <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
                     <?php if ($pCobrar): ?><div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="ingCobrar"><label class="form-check-label" for="ingCobrar"><?php echo $en?'Collect now':'Cobrar ahora'; ?></label></div>
                     <select id="ingMetodo" class="form-select form-select-sm" style="max-width:150px"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Otro</option></select><?php endif; ?>
@@ -220,12 +225,13 @@ function consultar(){
     });
 }
 if ($('btnConsultar')) { $('btnConsultar').onclick = consultar; $('ingCedula').addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); consultar(); } }); $('ingCedula').addEventListener('input', function(){ idPacienteSel = 0; $('pacEncontrado').classList.add('d-none'); $('pacNuevo').classList.remove('d-none'); }); }
-function limpiarForm(){ ['ingCedula','ingNombres','ingApellidos','ingTelefono','ingMotivo','ingDerivador','ingEmpresa'].forEach(function(i){ $(i).value=''; }); $('ingAseguradora').value=''; $('ingEspecialista').value='0'; document.querySelectorAll('.svc').forEach(function(c){ c.checked=false; }); montoManual=false; sumar(); idPacienteSel=0; $('pacEncontrado').classList.add('d-none'); $('pacNuevo').classList.remove('d-none'); $('cedulaInfo').textContent=''; msg('',''); if ($('ingCobrar')) $('ingCobrar').checked=false; $('ingCedula').focus(); }
+function limpiarForm(){ ['ingCedula','ingNombres','ingApellidos','ingTelefono','ingMotivo','ingDerivador','ingEmpresa','ingObs'].forEach(function(i){ $(i).value=''; }); $('ingAlerta').checked=false; $('ingAseguradora').value=''; $('ingEspecialista').value='0'; document.querySelectorAll('.svc').forEach(function(c){ c.checked=false; }); montoManual=false; sumar(); idPacienteSel=0; $('pacEncontrado').classList.add('d-none'); $('pacNuevo').classList.remove('d-none'); $('cedulaInfo').textContent=''; msg('',''); if ($('ingCobrar')) $('ingCobrar').checked=false; $('ingCedula').focus(); }
 function guardarIngreso(destino){
     var fd = new FormData(); fd.append('accion','crear'); fd.append('destino', destino);
     fd.append('cedula', $('ingCedula').value); fd.append('idPaciente', idPacienteSel); fd.append('nombres', $('ingNombres').value); fd.append('apellidos', $('ingApellidos').value); fd.append('telefono', $('ingTelefono').value);
     document.querySelectorAll('.svc:checked').forEach(function(c){ fd.append('servicios[]', c.value); });
     fd.append('idEspecialista', $('ingEspecialista').value); fd.append('monto', $('ingMonto').value); fd.append('motivo', $('ingMotivo').value);
+    fd.append('observacion', $('ingObs').value); if ($('ingAlerta').checked) fd.append('alerta_permanente', '1');
     fd.append('derivador', $('ingDerivador').value); fd.append('aseguradora', $('ingAseguradora').value); fd.append('empresa', $('ingEmpresa').value);
     if ($('ingCobrar') && $('ingCobrar').checked) { fd.append('cobrar_ahora', '1'); fd.append('metodo', $('ingMetodo').value); }
     fetch('turno_accion.php', {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){

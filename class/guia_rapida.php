@@ -20,11 +20,11 @@ function guia_rapida_html($en, $rol, $pasoActual = 0) {
     <span class="small text-muted"><?php echo $en ? 'show / hide' : 'mostrar / ocultar'; ?></span>
   </summary>
   <div class="card-body py-3">
-    <div class="row g-2">
+    <div class="row g-2 align-items-start">
     <?php foreach ($pasos as $n => [$ico, $tit, $quien, $desc, $roles]):
         $mio = in_array($rol, $roles, true); $aqui = ($n === (int)$pasoActual); ?>
       <div class="col">
-        <div class="h-100 rounded p-2 border <?php echo $aqui ? 'border-primary border-2' : ''; ?> <?php echo $mio ? 'bg-light' : ''; ?>" style="<?php echo $mio ? '' : 'opacity:.62'; ?>">
+        <div class="rounded p-2 border <?php echo $aqui ? 'border-primary border-2' : ''; ?> <?php echo $mio ? 'bg-light' : ''; ?>" style="<?php echo $mio ? '' : 'opacity:.62'; ?>">
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="badge rounded-pill <?php echo $aqui ? 'bg-primary' : 'bg-secondary'; ?>"><?php echo $n; ?></span>
             <i class="bi <?php echo $ico; ?>"></i> <b><?php echo htmlspecialchars($tit, ENT_QUOTES, 'UTF-8'); ?></b>

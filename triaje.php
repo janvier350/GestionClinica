@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'sin_c
 $idCitaSel = (int)($_GET['idCita'] ?? 0);
 $from      = (($_GET['from'] ?? '') === 'att') ? 'att' : '';
 $sinCita   = !empty($_GET['sin_cita']);
-$cita = null; $tri = null;
+$cita = null; $tri = null; $obsRecepcion = '';
 if ($idCitaSel > 0) {
     $q = $conexion->query("SELECT A.IDCITA, A.FECHA_CITA, A.HORA_INICIO, A.ESTADO_CITA, A.IDPACIENTE,
                                   CONCAT(P.NOMBRES,' ',P.APELLIDOS) AS PACIENTE, P.CEDULA, P.FECHANACIMIENTO,
@@ -95,7 +95,11 @@ if ($idCitaSel > 0) {
                              LEFT JOIN ADM_USUARIO D ON D.IDADM_USUARIO = A.IDDOCTOR
                             WHERE A.IDCITA = $idCitaSel AND A.ESTADO='A' LIMIT 1");
     $cita = $q ? $q->fetch_assoc() : null;
-    if ($cita) $tri = triaje_obtener($conexion, $idCitaSel);
+    if ($cita) {
+        $tri = triaje_obtener($conexion, $idCitaSel);
+        $qo = @$conexion->query("SELECT OBSERVACION FROM turno WHERE IDCITA = $idCitaSel AND OBSERVACION IS NOT NULL LIMIT 1");
+        $obsRecepcion = ($qo && ($xo = $qo->fetch_assoc())) ? $xo['OBSERVACION'] : '';
+    }
 }
 
 $hoyLista = [];
@@ -112,7 +116,8 @@ if (!$cita && !$sinCita) {
     $sql = "SELECT A.IDCITA, A.FECHA_CITA, A.HORA_INICIO, A.ESTADO_CITA, A.COMENTARIO,
                    CONCAT(P.NOMBRES,' ',P.APELLIDOS) AS PACIENTE, P.CEDULA,
                    CONCAT(D.NOMBRES,' ',D.APELLIDOS) AS DOCTOR,
-                   T.IDTRIAJE, T.MOTIVO
+                   T.IDTRIAJE, T.MOTIVO,
+                   (SELECT TU.OBSERVACION FROM turno TU WHERE TU.IDCITA = A.IDCITA AND TU.OBSERVACION IS NOT NULL LIMIT 1) AS OBS_RECEPCION
               FROM AG_CITA A
               INNER JOIN AG_PACIENTE P ON P.IDPACIENTE = A.IDPACIENTE
               LEFT JOIN ADM_USUARIO D ON D.IDADM_USUARIO = A.IDDOCTOR
@@ -235,6 +240,7 @@ function tv($tri, $k) {
                 </div>
             </div></div>
 
+            <?php if ($obsRecepcion !== ''): ?><div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle-fill"></i> <b><?php echo $en?'Note from reception':'Nota de recepción'; ?>:</b> <?php echo h($obsRecepcion); ?></div><?php endif; ?>
             <form method="POST" class="card shadow-sm"><div class="card-body">
                 <input type="hidden" name="accion" value="guardar">
                 <input type="hidden" name="idCita" value="<?php echo (int)$cita['IDCITA']; ?>">
@@ -318,7 +324,8 @@ function tv($tri, $k) {
                         <tr>
                             <?php if ($busca !== ''): ?><td><?php echo h(date('m/d/Y', strtotime($r['FECHA_CITA']))); ?></td><?php endif; ?>
                             <td><?php echo h(substr($r['HORA_INICIO'],0,5)); ?></td>
-                            <td><b><?php echo h($r['PACIENTE']); ?></b><div class="small text-muted"><?php echo h($r['CEDULA']); ?></div></td>
+                            <td><b><?php echo h($r['PACIENTE']); ?></b><div class="small text-muted"><?php echo h($r['CEDULA']); ?></div>
+                                <?php if (!empty($r['OBS_RECEPCION'])): ?><div class="small text-danger"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo h($r['OBS_RECEPCION']); ?></div><?php endif; ?></td>
                             <td><?php echo h($r['DOCTOR']); ?></td>
                             <td class="small"><?php echo h(mb_strimwidth((string)$r['MOTIVO'], 0, 60, '…')); ?></td>
                             <td><?php if ($hecho): ?><span class="badge bg-info text-dark"><?php echo $en?'Triaged':'Triada'; ?></span><?php else: ?><span class="badge bg-warning text-dark"><?php echo $en?'Waiting':'Por triar'; ?></span><?php endif; ?></td>

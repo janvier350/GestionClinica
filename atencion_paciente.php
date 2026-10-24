@@ -92,6 +92,11 @@ $rgFecha    = $registro['reg']['FECHA']    ?? ($d['FECHA_CITA'] ?? date('Y-m-d')
 $rgTratante = $registro['reg']['TRATANTE'] ?? trim(($d['DOC_NOMBRES'] ?? '').' '.($d['DOC_APELLIDOS'] ?? ''));
 $rgItems    = $registro['items'] ?: [['INDICACION'=>'','CANTIDAD'=>'','RECOMENDACION'=>'']];
 
+// Nota de recepción (Atención rápida): alergias / recomendaciones indicadas al ingresar al paciente
+$obsRecepcion = '';
+$qor = @$conexion->query("SELECT OBSERVACION FROM turno WHERE IDCITA = $idCitaInt AND OBSERVACION IS NOT NULL LIMIT 1");
+if ($qor && ($xor = $qor->fetch_assoc())) $obsRecepcion = (string)$xor['OBSERVACION'];
+
 // Exámenes del paciente (órdenes y seguimiento)
 require_once(__DIR__ . '/class/enfermeria.php');
 $modExamenes   = modulo_activo('examenes');
@@ -423,6 +428,10 @@ $prevMedidas = trim($prevPesoTxt . ($prevPesoTxt && $prevTallaTxt ? ' · ' : '')
     </div>
 </div>
 
+<?php if ($obsRecepcion !== ''): ?>
+<div class="alert alert-danger d-flex align-items-start gap-2 mb-3"><i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div><b><?php echo current_lang()==='en' ? 'Note from reception' : 'Nota de recepción'; ?>:</b> <?php echo nl2br(h($obsRecepcion)); ?></div></div>
+<?php endif; ?>
 <?php if ($derRecibida): $enD = (current_lang() === 'en'); ?>
 <div class="main-card mb-3 card border-primary">
     <div class="card-body py-3">
